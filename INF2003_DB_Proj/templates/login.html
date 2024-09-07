@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Login Page</title>
+  <!-- Link to external CSS file -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <h2 class="login-title">Login</h2>
+      <form action="/login" method="POST">
+        <div class="input-group">
+          <label for="userID">User ID</label>
+          <input type="text" id="userID" name="userID" required>
+        </div>
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit" class="login-button">Login</button>
+      </form>
+      <div class="helper-links">
+        <a href="#">Forgot password?</a>
+        <a href="/register">Don't have an account? Register here</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
