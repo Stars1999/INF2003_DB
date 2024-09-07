@@ -42,7 +42,7 @@ def register():
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
         # Encrypt the hashed password using AES-256
-        encrypted_password = cipher.encrypt(hashed_password)
+        # encrypted_password = cipher.encrypt(hashed_password)
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -52,7 +52,7 @@ def register():
             cursor.execute('''
                 INSERT INTO Users (username, password, email_add, phone_number, address, user_role)
                 VALUES (?, ?, ?, ?, ?, ?);
-            ''', (userID, encrypted_password, email, phone_number, address, user_role))
+            ''', (userID, hashed_password, email, phone_number, address, user_role))
             conn.commit()
             # Instead of flash, we pass a flag to the template
             return render_template('register.html', registered=True)
@@ -80,10 +80,10 @@ def login():
 
         if user:
             # Decrypt the stored password
-            decrypted_password = cipher.decrypt(user['password']).decode('utf-8')
+            # decrypted_password = cipher.decrypt(user['password']).decode('utf-8')
 
             # Compare the input password with the decrypted hashed password using bcrypt
-            if bcrypt.checkpw(password.encode('utf-8'), decrypted_password.encode('utf-8')):
+            if bcrypt.checkpw(password.encode('utf-8'), user['password']):
                 session['userID'] = user['username']
                 session['user_role'] = user['user_role']
 
