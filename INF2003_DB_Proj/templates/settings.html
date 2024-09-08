@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Settings Page</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+</head>
+<body>
+  <section class="settings-section">
+    <h2>User Settings</h2>
+    <form class="user-form" action="#" method="POST">
+      <div class="form-group">
+        <label for="name">Full Name:</label>
+        <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address:</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">New Password:</label>
+        <input type="password" id="password" name="password" placeholder="Enter new password">
+      </div>
+
+      <div class="form-group">
+        <label for="confirm-password">Confirm Password:</label>
+        <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm new password">
+      </div>
+
+      <button type="submit" class="btn save-btn">Save Changes</button>
+    </form>
+
+    
+
+    <div class="delete-section">
+      <h3>Danger Zone</h3>
+      <p>If you wish to delete your account, please be aware that this action is permanent.</p>
+      <button class="btn delete-btn">Delete Account</button>
+    </div>
+
+    <div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+    </div>
+    
+
+    
+  </section>
+
+  <footer>
+    
+  </footer>
+</body>
+</html>

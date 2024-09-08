@@ -102,6 +102,11 @@ def doctor_dashboard():
         return render_template('doctor_dashboard.html', username=session['username'])
     return redirect(url_for('home'))
 
+# Settings
+@app.route('/settings')
+def settings():
+    return render_template('settings.html')
+
 # Logout route
 @app.route('/logout')
 def logout():
