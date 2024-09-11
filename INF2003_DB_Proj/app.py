@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 import sqlite3
 import bcrypt
 from cryptography.fernet import Fernet
@@ -99,13 +99,101 @@ def user_dashboard():
 @app.route('/doctor_dashboard')
 def doctor_dashboard():
     if 'username' in session and session['user_role'] == 'doctor':
-        return render_template('doctor_dashboard.html', username=session['username'])
+        # Open a database connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            # Fetch distinct medication types from the Medications table
+            cursor.execute('SELECT DISTINCT med_type FROM Medications')
+            med_types = [row['med_type'] for row in cursor.fetchall()]
+
+            return render_template('doctor_dashboard.html', username=session['username'], med_types=med_types)
+
+        except sqlite3.Error as e:
+            flash(f"Error loading dashboard: {e}", 'danger')
+            return redirect(url_for('home'))
+
+        finally:
+            conn.close()
+
     return redirect(url_for('home'))
 
-# Settings
-@app.route('/settings')
-def settings():
-    return render_template('settings.html')
+# Handle consolidated POST request for health, medication, and medical certificate data
+@app.route('/submit_doctor_form', methods=['POST'])
+def submit_doctor_form():
+    if 'username' in session and session['user_role'] == 'doctor':
+        # Open a database connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            # Retrieve form data
+            user_id = request.form['user_id']
+            doctor_id = request.form['doc_id']
+            doc_notes = request.form['doc_notes']
+            blood_pressure = request.form['blood_pressure']
+            blood_sugar = request.form['blood_sugar']
+            med_name = request.form['med_name']
+            issue_date = request.form['issue_date']
+            visit_date = request.form['visit_date']
+            cert_details = request.form['cert_details']
+
+            # Insert medical certificate data into Medical_Cert table
+            cursor.execute('''
+                            INSERT INTO Medical_Cert (user_id, doc_id, issue_date, cert_details)
+                            VALUES (?, ?, ?, ?)
+                        ''', (user_id, doctor_id, issue_date, cert_details))
+
+            # Commit the changes
+            conn.commit()
+
+            # Retrieve the certificate_id of the last inserted record
+            cert_id = cursor.lastrowid
+
+            # Insert health tracking data into User_History table with the retrieved certificate_id
+            cursor.execute('''
+                            INSERT INTO User_History (user_id, doc_id, doc_notes, blood_pressure, blood_sugar, prescribed_med, visit_date, certificate_id)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (user_id, doctor_id, doc_notes, blood_pressure, blood_sugar, med_name, visit_date, cert_id))
+
+            # Commit the changes
+            conn.commit()
+
+            flash('All details submitted successfully.', 'success')
+
+        except sqlite3.Error as e:
+            flash(f"Error: {e}", 'danger')
+
+        finally:
+            conn.close()
+
+        return redirect(url_for('doctor_dashboard'))
+
+
+@app.route('/get_medications/<med_type>', methods=['GET'])
+def get_medications(med_type):
+    if 'username' in session and session['user_role'] == 'doctor':
+        # Open a database connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            # Fetch medications based on the selected type
+            cursor.execute('''
+                SELECT med_name FROM Medications WHERE med_type = ?
+            ''', (med_type,))
+            medications = cursor.fetchall()
+
+            # Convert to a list of dictionaries for JSON response
+            med_list = [{'med_name': row['med_name']} for row in medications]
+
+            return jsonify(med_list)
+
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+
+        finally:
+            conn.close()
+
+    return jsonify({'error': 'Unauthorized'}), 401
 
 # Logout route
 @app.route('/logout')
