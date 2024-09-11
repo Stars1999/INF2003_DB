@@ -168,6 +168,11 @@ def submit_doctor_form():
 
         return redirect(url_for('doctor_dashboard'))
 
+#Settings
+# Home page with login
+@app.route('/settings')
+def settings():
+    return render_template('settings.html')
 
 @app.route('/get_medications/<med_type>', methods=['GET'])
 def get_medications(med_type):

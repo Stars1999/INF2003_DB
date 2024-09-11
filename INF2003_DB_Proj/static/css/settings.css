@@ -45,7 +45,7 @@
   
   .settings-section {
     max-width: 600px;
-    margin: 40px auto;
+    margin: 120px auto 40px auto; /* Adds margin at the top to push it below the header */
     padding: 20px;
     background-color: white;
     border-radius: 8px;
@@ -67,29 +67,38 @@
     margin-bottom: 5px;
   }
 
-.logout-btn {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #e74c3c;
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    border-radius: 5px;
-    margin-top: 20px; /* Adds space above the button */
-    transition: background-color 0.3s ease;
+/* Header Section */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100vw;
+  padding: 20px 50px;
+  background-color: #0056b3;
+  color: white;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 80px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.logout-btn:hover {
-    background-color: #c0392b;
+.logo-img {
+  height: 50px;
 }
 
-.logout-btn:active {
-    background-color: #a93226;
+.logout-button {
+  background-color: #dc3545;
+  color: white;
+  padding: 0.7rem 1.5rem;
+  text-decoration: none;
+  font-size: 16px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
 }
 
-.logout-btn:focus {
-    outline: none;
-    box-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+.logout-button:hover {
+  background-color: #c82333;
 }
 
 

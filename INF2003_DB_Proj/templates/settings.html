@@ -7,6 +7,14 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
 </head>
 <body>
+  <header class="dashboard-header">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/med_logo.png') }}" alt="Logo" class="logo-img">
+    </div>
+    <div class="logout">
+      <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
+    </div>
+  </header>
   <section class="settings-section">
     <h2>User Settings</h2>
     <form class="user-form" action="#" method="POST">
@@ -41,9 +49,7 @@
       <button class="btn delete-btn">Delete Account</button>
     </div>
 
-    <div>
-        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
-    </div>
+    
     
 
     
