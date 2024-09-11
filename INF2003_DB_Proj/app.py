@@ -169,10 +169,38 @@ def submit_doctor_form():
         return redirect(url_for('doctor_dashboard'))
 
 #Settings
-# Home page with login
 @app.route('/settings')
 def settings():
-    return render_template('settings.html')
+    if 'username' in session and session['user_role'] == 'user':
+        return render_template('settings.html', username=session['username'])
+    return redirect(url_for('home'))
+
+# Delete account route
+@app.route('/delete_account', methods=['POST'])
+def delete_account():
+    if 'username' in session:
+        username = session['username']
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        try:
+            # Delete user from the database
+            cursor.execute('DELETE FROM Users WHERE username = ?', (username,))
+            conn.commit()
+
+            flash('Your account has been deleted successfully.', 'success')
+
+            # Clear the session after account deletion
+            session.clear()
+
+        except sqlite3.Error as e:
+            flash(f"Error deleting account: {e}", 'danger')
+
+        finally:
+            conn.close()
+
+    return redirect(url_for('home'))
 
 @app.route('/get_medications/<med_type>', methods=['GET'])
 def get_medications(med_type):

@@ -5,6 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Settings Page</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
+  <script>
+    // JavaScript function to confirm deletion
+    function confirmDeletion(event) {
+      // Prevent the form from submitting immediately
+      event.preventDefault();
+
+      // Show confirmation dialog
+      let confirmation = confirm("Are you sure you want to delete your account? This action is permanent and cannot be undone.");
+
+      // If the user confirms, submit the form
+      if (confirmation) {
+        event.target.submit();
+      }
+    }
+  </script>
 </head>
 <body>
   <header class="dashboard-header">
@@ -15,6 +30,7 @@
       <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
     </div>
   </header>
+
   <section class="settings-section">
     <h2>User Settings</h2>
     <form class="user-form" action="#" method="POST">
@@ -41,22 +57,18 @@
       <button type="submit" class="btn save-btn">Save Changes</button>
     </form>
 
-    
-
     <div class="delete-section">
       <h3>Danger Zone</h3>
       <p>If you wish to delete your account, please be aware that this action is permanent.</p>
-      <button class="btn delete-btn">Delete Account</button>
+
+      <!-- Delete Account Form with Confirmation -->
+      <form action="{{ url_for('delete_account') }}" method="POST" onsubmit="confirmDeletion(event)">
+        <button type="submit" class="btn delete-btn">Delete Account</button>
+      </form>
     </div>
-
-    
-    
-
-    
   </section>
 
   <footer>
-    
   </footer>
 </body>
 </html>
