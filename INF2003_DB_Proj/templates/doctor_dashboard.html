@@ -21,76 +21,9 @@
 
   <!-- Main Content Section -->
   <div class="main-content">
-    <!-- Form Section (Consolidated Form for Health, Medication, and Medical Certificate) -->
-    <div class="left-section">
-      <div class="form-section">
-        <h2>Doctor Form</h2>
-        <form action="{{ url_for('submit_doctor_form') }}" method="POST">
 
-          <!-- Health Tracking Section -->
-          <h3>Health Tracking</h3>
-          <div class="input-group">
-            <label for="user_id">User ID:</label>
-            <input type="text" id="user_id" name="user_id" required>
-          </div>
-          <div class="input-group">
-            <label for="doc_id">Doctor ID:</label>
-            <input type="text" id="doc_id" name="doc_id" required>
-          </div>
-          <div class="input-group">
-            <label for="doc_notes">Doctor Notes:</label>
-            <textarea id="doc_notes" name="doc_notes" required></textarea>
-          </div>
-          <div class="input-group">
-            <label for="blood_pressure">Blood Pressure:</label>
-            <input type="text" id="blood_pressure" name="blood_pressure" required>
-          </div>
-          <div class="input-group">
-            <label for="blood_sugar">Blood Sugar:</label>
-            <input type="text" id="blood_sugar" name="blood_sugar" required>
-          </div>
-          <div class="input-group">
-            <label for="issue_date">Visit Date:</label>
-            <input type="date" id="visit_date" name="visit_date" value="{{ date }}" readonly>
-          </div>
-
-          <!-- Medication Selection Section -->
-          <h3>Medication Selection</h3>
-          <div class="input-group">
-            <label for="med_type">Medication Type:</label>
-            <select id="med_type" name="med_type" required onchange="loadMedicationNames()">
-              <!-- Medication types will be dynamically populated from the database -->
-              {% for type in med_types %}
-              <option value="{{ type }}">{{ type }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="input-group">
-            <label for="med_name">Medication Name:</label>
-            <select id="med_name" name="med_name" required>
-              <!-- Medication names will be dynamically populated based on selected type -->
-            </select>
-          </div>
-
-          <!-- Medical Certificate Section -->
-          <h3>Issue Medical Certificate</h3>
-          <div class="input-group">
-            <label for="issue_date">Issue Date:</label>
-            <input type="date" id="issue_date" name="issue_date" value="{{ date }}" readonly>
-          </div>
-          <div class="input-group">
-            <label for="cert_details">Certificate Details:</label>
-            <textarea id="cert_details" name="cert_details" required></textarea>
-          </div>
-
-          <!-- Submit Button -->
-          <button type="submit">Submit All Details</button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Right Side (Dashboard Details) -->
-    <div class="right-section">
+    <!-- Top Section (Dashboard Details for Recent Patient Visits and Appointments) -->
+    <div class="top-section">
       <div class="dashboard-card">
         <h3>Recent Patient Visits</h3>
         <ul>
@@ -107,6 +40,83 @@
         </ul>
       </div>
     </div>
+
+    <!-- Main Section with Doctor Form on the left and Additional Card on the right -->
+    <div class="content-section">
+      <!-- Left Section (Form for Doctor to Submit Details) -->
+      <div class="left-section">
+        <div class="form-section">
+          <h2>Doctor Form</h2>
+          <form action="{{ url_for('submit_doctor_form') }}" method="POST">
+
+            <!-- Health Tracking Section -->
+            <h3>Health Tracking</h3>
+            <div class="input-group">
+              <label for="user_id">User ID:</label>
+              <input type="text" id="user_id" name="user_id" required>
+            </div>
+            <div class="input-group">
+              <label for="doc_id">Doctor ID:</label>
+              <input type="text" id="doc_id" name="doc_id" required>
+            </div>
+            <div class="input-group">
+              <label for="doc_notes">Doctor Notes:</label>
+              <textarea id="doc_notes" name="doc_notes" required></textarea>
+            </div>
+            <div class="input-group">
+              <label for="blood_pressure">Blood Pressure:</label>
+              <input type="text" id="blood_pressure" name="blood_pressure" required>
+            </div>
+            <div class="input-group">
+              <label for="blood_sugar">Blood Sugar:</label>
+              <input type="text" id="blood_sugar" name="blood_sugar" required>
+            </div>
+            <div class="input-group">
+              <label for="visit_date">Visit Date:</label>
+              <input type="date" id="visit_date" name="visit_date" value="{{ date }}" readonly>
+            </div>
+
+            <!-- Medication Selection Section -->
+            <h3>Medication Selection</h3>
+            <div class="input-group">
+              <label for="med_type">Medication Type:</label>
+              <select id="med_type" name="med_type" required onchange="loadMedicationNames()">
+                {% for type in med_types %}
+                <option value="{{ type }}">{{ type }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="input-group">
+              <label for="med_name">Medication Name:</label>
+              <select id="med_name" name="med_name" required></select>
+            </div>
+
+            <!-- Medical Certificate Section -->
+            <h3>Issue Medical Certificate</h3>
+            <div class="input-group">
+              <label for="issue_date">Issue Date:</label>
+              <input type="date" id="issue_date" name="issue_date" value="{{ date }}" readonly>
+            </div>
+            <div class="input-group">
+              <label for="cert_details">Certificate Details:</label>
+              <textarea id="cert_details" name="cert_details" required></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit">Submit All Details</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Right Section (Additional Card) -->
+      <div class="right-section">
+        <div class="extra-card">
+          <h3>Additional Information</h3>
+          <p>This section can hold extra content or additional details related to the form.</p>
+        </div>
+      </div>
+    </div>
+
   </div>
 
 </body>
