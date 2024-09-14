@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Appointments</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/appointment.css') }}">
+  <script>
+    function loadAppointmentDetails(date) {
+      // Send a request to fetch appointment details for the selected date
+      fetch(`/appointment-details?date=${date}`)
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('appointment-details').innerHTML = data;
+        })
+        .catch(error => console.error('Error:', error));
+    }
+  </script>
+</head>
+<body>
+  <header class="dashboard-header">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/med_logo.png') }}" alt="Logo" class="logo-img">
+    </div>
+    <div class="logout">
+      <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Calendar Section -->
+    <div class="calendar">
+      <h2>Calendar</h2>
+      <div class="calendar-container">
+        {{ calendar|safe }}
+      </div>
+    </div>
+
+    <!-- User Form Section -->
+    <div class="user-form">
+      <h2>Appointment Details</h2>
+      <div id="appointment-details">
+        <p>Select a date to view appointment details.</p>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

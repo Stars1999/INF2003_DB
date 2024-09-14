@@ -175,6 +175,13 @@ def settings():
         return render_template('settings.html', username=session['username'])
     return redirect(url_for('home'))
 
+#Settings
+@app.route('/appointment')
+def appointment():
+    if 'username' in session and session['user_role'] == 'user':
+        return render_template('appointment.html', username=session['username'])
+    
+
 # Delete account route
 @app.route('/delete_account', methods=['POST'])
 def delete_account():
