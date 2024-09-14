@@ -65,15 +65,18 @@ def login():
 
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        # Modify the query to also fetch the user_id
         cursor.execute('''
-            SELECT username, password, user_role FROM Users WHERE username = ?;
+            SELECT user_id, username, password, user_role FROM Users WHERE username = ?;
         ''', (username,))
         user = cursor.fetchone()
         conn.close()
 
         if user:
-            # Compare the input password with the decrypted hashed password using bcrypt
+            # Compare the input password with the hashed password using bcrypt
             if bcrypt.checkpw(password.encode('utf-8'), user['password']):
+                session['user_id'] = user['user_id']  # Store user_id in session
                 session['username'] = user['username']
                 session['user_role'] = user['user_role']
 
@@ -82,9 +85,9 @@ def login():
                 else:
                     return redirect(url_for('user_dashboard'))
             else:
-                flash('Login failed. Incorrect userID or password.', 'danger')
+                flash('Login failed. Incorrect username or password.', 'danger')
         else:
-            flash('Login failed. Incorrect userID or password.', 'danger')
+            flash('Login failed. Incorrect username or password.', 'danger')
 
         return redirect(url_for('home'))
 
@@ -107,7 +110,11 @@ def doctor_dashboard():
             cursor.execute('SELECT DISTINCT med_type FROM Medications')
             med_types = [row['med_type'] for row in cursor.fetchall()]
 
-            return render_template('doctor_dashboard.html', username=session['username'], med_types=med_types)
+            # Get the doctor ID (user_id) from the session
+            doctor_id = session['user_id']
+
+            return render_template('doctor_dashboard.html', username=session['username'],
+                                   med_types=med_types, doctor_id=doctor_id)
 
         except sqlite3.Error as e:
             flash(f"Error loading dashboard: {e}", 'danger')

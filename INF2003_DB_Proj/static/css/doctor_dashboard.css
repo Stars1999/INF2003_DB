@@ -14,7 +14,7 @@ body {
 }
 
 /* Header Section */
-.dashboard-header {
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -30,7 +30,8 @@ body {
 }
 
 .logo-img {
-  height: 50px;
+  height: 60px; /* Adjusted the height to make the logo smaller */
+  width: auto; /* Ensures that the aspect ratio is maintained */
 }
 
 .logout-button {
@@ -58,24 +59,58 @@ body {
   padding: 20px;
 }
 
-/* Top Section - Two dashboard cards side by side */
+/* Top Section - Two cards side by side */
 .top-section {
   display: flex;
   justify-content: space-between;
   margin-bottom: 20px;
 }
 
-.dashboard-card {
+/* Enhanced Styling for Queue and Appointment Cards */
+.queue-card,
+.appointments-card {
   flex: 1.1;
-  background-color: white;
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%);
   padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   margin-right: 20px;
 }
 
-.dashboard-card:last-child {
+.queue-card h3,
+.appointments-card h3 {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.queue-card p,
+.appointments-card li {
+  font-size: 18px;
+  color: #555;
+}
+
+.queue-card:last-child {
   margin-right: 0;
+}
+
+/* Button Styling for Queue */
+.queue-button {
+  background-color: #28a745;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.queue-button:hover {
+  background-color: #218838;
+  transform: translateY(-3px);
 }
 
 /* Content Section (Form on the left and extra card on the right) */
@@ -85,37 +120,66 @@ body {
   margin-top: 20px;
 }
 
-.left-section {
+.form-section {
   flex: 2;
   margin-right: 20px;
 }
 
-.right-section {
+.extra-card {
   flex: 1;
 }
 
-.form-section, .extra-card {
+.form-container, .extra-info-card {
   background-color: white;
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Submit Button Styling */
+.submit-button {
+  width: 100%;
+  padding: 0.8rem 1.5rem;
+  background-color: #007bff; /* Primary blue color */
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.submit-button:hover {
+  background-color: #0056b3; /* Darker blue for hover effect */
+  transform: translateY(-3px); /* Slight lift on hover */
+}
+
+.submit-button:active {
+  transform: translateY(0px); /* Button returns to original position on click */
+}
+
+.submit-button:disabled {
+  background-color: #cccccc; /* Greyed out when disabled */
+  cursor: not-allowed;
+}
+
 /* Input Fields Styling */
-.input-group {
+.input-field-group {
   margin-bottom: 1.2rem;
 }
 
-.input-group label {
+.input-field-group label {
   display: block;
   margin-bottom: 0.5rem;
   font-size: 16px;
   color: #333;
 }
 
-.input-group input,
-.input-group textarea,
-.input-group select {
+.input-field-group input,
+.input-field-group textarea,
+.input-field-group select {
   width: 100%;
   padding: 0.7rem;
   border: 1px solid #ccc;
@@ -123,20 +187,10 @@ body {
   font-size: 16px;
 }
 
-button {
-  width: 100%;
-  padding: 1rem;
-  background-color: #0056b3;
-  color: white;
-  font-size: 18px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: #004494;
+#queue-number {
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: #333;
 }
 
 /* Responsive Design */
@@ -149,13 +203,13 @@ button:hover {
     flex-direction: column;
   }
 
-  .left-section, .right-section {
+  .form-section, .extra-card {
     width: 100%;
     margin-right: 0;
     margin-top: 20px;
   }
 
-  .dashboard-card {
+  .queue-card, .appointments-card {
     margin-right: 0;
     margin-bottom: 20px;
   }

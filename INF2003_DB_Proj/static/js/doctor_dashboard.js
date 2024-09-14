@@ -32,3 +32,12 @@ function loadMedicationNames() {
     .catch(error => console.error('Error fetching medication names:', error));
 }
 
+// Function to generate and display the next queue number
+function generateNextQueueNumber() {
+  // Generate a random queue number between 1 and 100
+  const nextQueueNumber = Math.floor(Math.random() * 100) + 1;
+
+  // Update the queue number display in the card
+  document.getElementById('queue-number').querySelector('span').textContent = nextQueueNumber;
+}
+
