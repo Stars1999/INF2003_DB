@@ -22,6 +22,17 @@
   <!-- Main Content Section -->
   <div class="main-content">
 
+       <!-- Flash Messages Section -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
     <!-- Top Section (Queue Number and Appointments) -->
     <div class="top-section">
       <!-- Queue Number Card -->
@@ -38,6 +49,11 @@
           <li>Sarah Connor - 2024-09-12</li>
           <li>Michael Jordan - 2024-09-13</li>
         </ul>
+
+        <!-- Form for creating tomorrow's schedule -->
+        <form action="{{ url_for('create_schedule') }}" method="POST">
+            <button class="queue-button" type="submit">Create Tomorrow's Schedule</button>
+        </form>
       </div>
     </div>
 
