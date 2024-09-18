@@ -111,13 +111,22 @@
       <!-- Right Section (Additional Card) -->
       <div class="extra-card">
         <div class="extra-info-card">
-          <h3>Additional Information</h3>
-          <p>This section can hold extra content or additional details related to the form.</p>
+          <!-- Search User ID Input -->
+          <div class="input-field-group">
+            <label for="search_user_id">Search User ID:</label>
+            <input type="text" id="search_user_id" name="search_user_id">
+            <button type="button" class="search-button" onclick="searchUserHistory()">Search</button>
+          </div>
+
+          <!-- History Details Section -->
+          <div id="history-details" style="display:none;">
+            <h3>Top 5 History Details</h3>
+            <!-- The top 5 history details will be dynamically created and inserted here -->
+          </div>
         </div>
+
       </div>
     </div>
-
   </div>
-
 </body>
 </html>
