@@ -230,6 +230,75 @@ def submit_doctor_form():
 
         return redirect(url_for('doctor_dashboard'))
 
+# Route to get user history by userID
+@app.route('/get_user_history/<user_id>', methods=['GET'])
+def get_user_history(user_id):
+    if 'username' in session and session['user_role'] == 'doctor':
+        # Open a database connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            # Fetch all history for the given user_id
+            cursor.execute('''
+                SELECT history_id FROM User_History WHERE user_id = ?
+            ''', (user_id,))
+            histories = cursor.fetchall()
+
+            # Convert to a list of dictionaries for JSON response
+            history_list = [{'history_id': row['history_id']} for row in histories]
+
+            return jsonify(history_list)
+
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+
+        finally:
+            conn.close()
+
+    return jsonify({'error': 'Unauthorized'}), 401
+
+@app.route('/get_user_history_top5/<user_id>', methods=['GET'])
+def get_user_history_top5(user_id):
+    if 'username' in session and session['user_role'] == 'doctor':
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            # Fetch the top 5 history records for the given user_id and join to fetch doctor's name
+            cursor.execute('''
+                            SELECT uh.doc_notes, uh.blood_pressure, uh.blood_sugar, uh.visit_date, u.username AS doctor_name
+                            FROM User_History uh
+                            JOIN Users u ON uh.doc_id = u.user_id  
+                            WHERE uh.user_id = ?
+                            ORDER BY uh.visit_date DESC
+                            LIMIT 5
+                        ''', (user_id,))
+            history_records = cursor.fetchall()
+
+            # Format the data for JSON response
+            records = [
+                {
+                    'doc_notes': record['doc_notes'],
+                    'blood_pressure': record['blood_pressure'],
+                    'blood_sugar': record['blood_sugar'],
+                    'visit_date': record['visit_date'],
+                    'doctor_name': record['doctor_name']  # Added doctor's name to the response
+                } for record in history_records
+            ]
+
+            return jsonify(records)
+
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+
+        finally:
+            conn.close()
+
+    return jsonify({'error': 'Unauthorized'}), 401
+
+
+
+
+
 #Settings
 @app.route('/settings')
 def settings():
