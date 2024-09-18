@@ -3,6 +3,7 @@ import sqlite3
 import bcrypt
 from datetime import datetime, timedelta
 from db_connection import create_connection
+import time
 
 app = Flask(__name__)
 
@@ -236,6 +237,60 @@ def settings():
     if 'username' in session and session['user_role'] == 'user':
         return render_template('settings.html', username=session['username'])
     return redirect(url_for('home'))
+
+@app.route('/update_account', methods=['POST'])
+def update_account():
+    if 'username' not in session:
+        flash('You are not logged in.', 'danger')
+        return redirect(url_for('login'))
+
+    # Retrieve form data
+    email = request.form.get('email')
+    phone_number = request.form.get('phone_number')
+    address = request.form.get('address')
+    password = request.form.get('password')
+    confirm_password = request.form.get('confirm-password')
+
+    # Get the current logged-in user's username from the session
+    username = session['username']
+
+    # Validation checks
+    if not email or not phone_number or not address:
+        flash('Email, phone number, and address are required.', 'danger')
+        return redirect(url_for('settings'))
+
+    if password and password != confirm_password:
+        flash('Passwords do not match.', 'danger')
+        return redirect(url_for('settings'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Update email, phone number, and address
+        cursor.execute('''
+            UPDATE Users 
+            SET email_add = ?, phone_number = ?, address = ? 
+            WHERE username = ?
+        ''', (email, phone_number, address, username))
+
+        # Update password if provided
+        if password:
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+            cursor.execute('UPDATE Users SET password = ? WHERE username = ?', (hashed_password, username))
+
+        conn.commit()
+        return render_template('login.html', updated=True)
+
+    except sqlite3.Error as e:
+        flash(f"Error updating account: {e}", 'danger')
+
+    finally:
+        conn.close()
+
+    return redirect(url_for('settings'))
+
+
 
 # Delete account route
 @app.route('/delete_account', methods=['POST'])
