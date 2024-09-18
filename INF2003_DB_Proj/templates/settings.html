@@ -33,7 +33,7 @@
 
   <section class="settings-section">
     <h2>User Settings</h2>
-    <form class="user-form" action="#" method="POST">
+    <form class="user-form" action="{{ url_for('update_account') }}" method="POST">
       <div class="form-group">
         <label for="name">Full Name:</label>
         <input type="text" id="name" name="name" placeholder="Enter your full name" required>
