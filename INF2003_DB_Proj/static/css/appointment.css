@@ -1,0 +1,131 @@
+/* Basic reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f0f8ff;
+  display: flex;
+  flex-direction: column;
+  padding-top: 100px;
+}
+
+/* Header Section */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100vw;
+  padding: 20px 50px;
+  background-color: #0056b3;
+  color: white;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 80px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.logo-img {
+  height: 50px;
+}
+
+.logout-button {
+  background-color: #dc3545;
+  color: white;
+  padding: 0.7rem 1.5rem;
+  text-decoration: none;
+  font-size: 16px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.logout-button:hover {
+  background-color: #c82333;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin: 20px;
+}
+
+.calendar {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.user-form {
+  flex: 1;
+  margin-left: 20px;
+}
+
+#calendar-container {
+  width: 100%; /* Full width of the calendar container */
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 10px;
+  min-height: 500px; /* Adjust the height to ensure visibility */
+}
+
+/* Specific styling for Pikaday Calendar */
+.pika-single {
+  width: 100vh; /* Full width of the calendar inside the container */
+  max-width: 100%; /* Ensure the calendar does not exceed the container's width */
+  height:80vh;
+  max-height:100%;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+/* Additional styling for .pika-lander to fit the container */
+.pika-lendar {
+  width: 100vh; /* Take full width of the parent container */
+  height: 100%;
+  max-width: 100%; /* Ensure no overflow */ 
+  max-height:100%;
+  background-color:inherit;
+  padding: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Consistent shadow with the calendar */
+}
+
+.pika-table {
+  width: 100%; /* Ensure the calendar table takes up the full width */
+}
+
+.pika-button{
+  height:8vh;
+}
+
+#appointment-details {
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 10px;
+  min-height: 200px; /* Ensure there’s space for the form */
+}
+
+  .pika-single {
+    width: 100%;
+  }
+
+  .pika-day.disabled {
+    pointer-events: none; /* Make the date unclickable */
+    opacity: 0.5; /* Make the date look disabled */
+    color: #aaa; /* Change color to indicate disabled */
+  }
+
+  .pika-day.fully-booked {
+    background-color: red !important;
+    color: white !important;
+  }
+
+  .pika-day.available {
+    background-color: green !important;
+    color: white !important;
+  }

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Appointments</title>
+
+  <!-- Pikaday CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.8.2/css/pikaday.min.css">
+
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/appointment.css') }}">
+</head>
+<body>
+  <header class="dashboard-header">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/med_logo.png') }}" alt="Logo" class="logo-img">
+    </div>
+    <div class="logout">
+      <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Calendar Section -->
+    <div class="calendar">
+      <h2>Calendar</h2>
+      <div id="calendar-container" class="calendar-container"></div> <!-- Calendar renders here -->
+    </div>
+
+    <!-- User Form Section -->
+    <div class="user-form">
+      <h2>Appointment Details</h2>
+      <div id="appointment-details">
+        <p>Select a date to view available time slots.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pikaday JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pikaday/1.8.2/pikaday.min.js"></script>
+
+  <script>
+    window.addEventListener('load', function() {
+      let availabilityData = {};  // To store availability data
+  
+      fetch('/available-dates')
+        .then(response => response.json())
+        .then(data => {
+          availabilityData = data;  // Store the availability data
+  
+          // Initialize the Pikaday calendar
+          var picker = new Pikaday({
+            field: document.getElementById('calendar-container'), // Attach to the container
+            bound: false, // Display inline instead of as a dropdown
+            container: document.getElementById('calendar-container'), // Specify the container for inline display
+            onDraw: function() {
+              updateDateColors(availabilityData);  // Update date colors
+            },
+            onSelect: function(date) {
+              var selectedDate = picker.toString();  // Get date in string format
+              console.log(`Selected Date: ${selectedDate}`);  // Log the selected date
+              loadTimeSlots(selectedDate);  // Call function when a date is selected
+            }
+          });
+        })
+        .catch(error => console.error('Error fetching available dates:', error));
+  
+      // Function to update calendar date colors
+      function updateDateColors(availabilityData) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);  // Normalize today's date
+        
+        const allDateCells = document.querySelectorAll('.pika-day');
+        allDateCells.forEach(cell => {
+          const year = cell.getAttribute('data-pika-year');
+          const month = parseInt(cell.getAttribute('data-pika-month'));
+          const day = parseInt(cell.getAttribute('data-pika-day'));
+          const cellDate = new Date(year, month, day);
+  
+          // Disable past dates by adding the "disabled" class
+          if (cellDate < today) {
+            cell.classList.add('disabled');
+          }
+  
+          // Color future dates based on availability
+          const formattedDate = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+          if (availabilityData[formattedDate]) {
+            if (availabilityData[formattedDate].fullyBooked) {
+              cell.classList.add('fully-booked');  // Mark as fully booked
+            } else {
+              cell.classList.add('available');  // Mark as available
+            }
+          }
+        });
+      }
+  
+      // Function to load available time slots and render dropdown
+      function loadTimeSlots(date) {
+        console.log(`Requesting time slots for date: ${date}`);  // Log the date being requested
+  
+        fetch(`/timeslots?date=${date}`)
+          .then(response => response.json())
+          .then(data => {
+            console.log(`Received time slots for ${date}:`, data);  // Log the received data
+  
+            let timeslotsHTML = '<h3>Available Time Slots</h3><form action="/book-appointment" method="POST">';
+            timeslotsHTML += `<input type="hidden" name="date" id="date" value="${date}">`;
+  
+            if (data.timeslots.length > 0) {
+              // Render as dropdown with a unique id and name
+              timeslotsHTML += '<div><label for="timeslot">Select a time slot: </label>';
+              timeslotsHTML += '<select name="timeslot" id="timeslot" required>';
+              data.timeslots.forEach(slot => {
+                timeslotsHTML += `<option value="${slot}">${slot}</option>`;
+              });
+              timeslotsHTML += '</select></div>';
+              timeslotsHTML += '<button type="submit">Book Appointment</button>';
+            } else {
+              timeslotsHTML += '<p>No available time slots for this date.</p>';
+            }
+  
+            timeslotsHTML += '</form>';
+            document.getElementById('appointment-details').innerHTML = timeslotsHTML;
+  
+          })
+          .catch(error => console.error('Error fetching time slots:', error));
+      }
+    });
+  </script>
+  
+</body>
+</html>

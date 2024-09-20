@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import sqlite3
 import bcrypt
 from datetime import datetime, timedelta
-from db_connection import create_connection
+from db_connection import create_connection, create_tables
 
 app = Flask(__name__)
 
@@ -237,6 +237,79 @@ def settings():
         return render_template('settings.html', username=session['username'])
     return redirect(url_for('home'))
 
+#Settings
+@app.route('/appointment')
+def appointment():
+    if 'username' in session and session['user_role'] == 'user':
+        return render_template('appointment.html', username=session['username'])
+# Function to get available dates (assuming you're using a specific route to show available dates)
+@app.route('/available-dates')
+def get_available_dates():
+    available_dates = {
+        "2024-09-14": {"fullyBooked": False},
+        "2024-09-15": {"fullyBooked": True},
+        "2024-09-16": {"fullyBooked": False}
+    }
+    return jsonify(available_dates)
+
+@app.route('/timeslots')
+def get_timeslots():
+    try:
+        date = request.args.get('date')  # Get the selected date from the frontend
+        print(f"Fetching available time slots for date: {date}")  # Log the date
+
+        connection = get_db_connection()
+
+        # Step 1: Fetch all time slots from clinic_schedule for the selected date
+        clinic_schedule_query = """
+        SELECT time FROM clinic_schedule WHERE date = ?
+        """
+        available_time_slots = [row['time'] for row in connection.execute(clinic_schedule_query, (date,))]
+
+        # Step 2: Fetch already booked time slots from appointments table for the same date
+        booked_slots_query = """
+        SELECT time FROM appointments WHERE date = ?
+        """
+        booked_slots = [row['time'] for row in connection.execute(booked_slots_query, (date,))]
+
+        # Step 3: Filter out booked slots from the available slots
+        remaining_slots = [slot for slot in available_time_slots if slot not in booked_slots]
+
+        print(f"Remaining slots for {date}: {remaining_slots}")  # Log the available slots
+
+        return jsonify({'timeslots': remaining_slots})
+
+    except Exception as e:
+        print(f"Error fetching time slots: {str(e)}")  # Log the error
+        return "Internal Server Error", 500  # Return a 500 response
+
+# Function to handle booking appointments
+@app.route('/book-appointment', methods=['POST'])
+def book_appointment():
+    date = request.form.get('date')
+    time_slot = request.form.get('timeslot')
+    patient_id = 1  # For now, assume a hardcoded patient ID
+
+    connection = get_db_connection()
+
+    # Check if the time slot is already booked (to prevent double-booking)
+    check_booking_query = """
+    SELECT * FROM appointments WHERE appointment_date = ? AND time_slot = ?
+    """
+    existing_booking = connection.execute(check_booking_query, (date, time_slot)).fetchone()
+
+    if existing_booking:
+        return "This time slot is already booked.", 400
+
+    # Insert the new appointment
+    booking_query = """
+    INSERT INTO appointments (patient_id, appointment_date, time_slot)
+    VALUES (?, ?, ?)
+    """
+    connection.execute(booking_query, (patient_id, date, time_slot))
+    connection.commit()
+
+    return "Appointment booked successfully.", 200
 # Delete account route
 @app.route('/delete_account', methods=['POST'])
 def delete_account():
