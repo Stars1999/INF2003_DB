@@ -623,7 +623,6 @@ def check_appointment():
         connection.close()
 
 
-
 @app.route('/available_timeslots')
 def get_available_timeslots():
     try:
@@ -649,6 +648,59 @@ def get_available_timeslots():
     except Exception as e:
         print(f"Error fetching time slots: {str(e)}")  # Log the error
         return "Internal Server Error", 500  # Return a 500 response
+
+
+@app.route('/cancel-appointment', methods=['POST'])
+def cancel_appointment():
+    data = request.json
+    date = data.get('date')
+    time = data.get('time')
+    user_id = session.get('user_id')
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Convert the incoming date to yyyy-mm-dd format
+        formatted_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+
+        # Log the incoming request data
+        print(f"Cancel request for date: {formatted_date}, time: {time}, user_id: {user_id}")
+
+        # Find the schedule_id for the selected date and time
+        cursor.execute("""
+            SELECT schedule_id FROM clinic_schedule
+            WHERE date = ? AND time = ?
+        """, (formatted_date, time))
+        schedule = cursor.fetchone()
+
+        if not schedule:
+            print("No appointment found for the provided date and time.")
+            return jsonify({'error': 'No appointment found'}), 400
+
+        schedule_id = schedule['schedule_id']
+
+        # Delete the appointment from the appointments table
+        cursor.execute("""
+            DELETE FROM appointments WHERE user_id = ? AND schedule_id = ?
+        """, (user_id, schedule_id))
+
+        # Update the clinic schedule status back to 'available'
+        cursor.execute("UPDATE clinic_schedule SET status = 'available' WHERE schedule_id = ?", (schedule_id,))
+
+        connection.commit()
+
+        print("Appointment canceled successfully.")
+        return jsonify({'success': 'Appointment canceled successfully'})
+
+    except sqlite3.Error as e:
+        connection.rollback()
+        print(f"Error canceling appointment: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        connection.close()
+
 
 
 # Logout route
