@@ -44,9 +44,9 @@ def register():
         try:
             # Store the encrypted password in the database
             cursor.execute('''
-                INSERT INTO Users (username, password, email_add, phone_number, address, user_role)
-                VALUES (?, ?, ?, ?, ?, ?);
-            ''', (username, hashed_password, email, phone_number, address, user_role))
+                INSERT INTO Users (username, password, email_add, phone_number, address, user_role, acc_status)
+                VALUES (?, ?, ?, ?, ?, ?, ?);
+            ''', (username, hashed_password, email, phone_number, address, user_role, 'enabled'))
             conn.commit()
             # Instead of flash, we pass a flag to the template
             return render_template('register.html', registered=True)
