@@ -41,3 +41,56 @@ function generateNextQueueNumber() {
   document.getElementById('queue-number').querySelector('span').textContent = nextQueueNumber;
 }
 
+// Function to search for user history by User ID and show the top 5 records
+function searchUserHistory() {
+  const userID = document.getElementById('search_user_id').value;
+
+  // Fetch the top 5 user history from the server
+  fetch(`/get_user_history_top5/${userID}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.length > 0) {
+        console.log('Received data:', data);  // Debugging
+
+        // Get the history details container
+        const historyDetailsContainer = document.getElementById('history-details');
+
+        // Clear any previous details
+        historyDetailsContainer.innerHTML = '';
+
+        // Show the history details section
+        historyDetailsContainer.style.display = 'block';
+
+        // Create and append new elements for the top 5 records
+        data.forEach((history, index) => {
+          const historyElement = document.createElement('div');
+          historyElement.classList.add('history-record');
+
+          // Display each history record
+          historyElement.innerHTML = `
+            <h4>Record ${index + 1}</h4>
+            <p><strong>Doctor Notes:</strong> ${history.doc_notes || 'N/A'}</p>
+            <p><strong>Blood Pressure:</strong> ${history.blood_pressure || 'N/A'}</p>
+            <p><strong>Blood Sugar:</strong> ${history.blood_sugar || 'N/A'}</p>
+            <p><strong>Visit Date:</strong> ${history.visit_date || 'N/A'}</p>
+            <p><strong>Prescribed Med:</strong> ${history.prescribed_med || 'N/A'}</p>
+            <p><strong>Doctor Name:</strong> ${history.doctor_name || 'N/A'}</p>
+            <hr>
+          `;
+
+          // Append each record to the history details container
+          historyDetailsContainer.appendChild(historyElement);
+        });
+      } else {
+        alert('No history records found for this user.');
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching user history:', error);
+      alert('Failed to retrieve user history. Please try again.');
+    });
+}
+
+
+
+
