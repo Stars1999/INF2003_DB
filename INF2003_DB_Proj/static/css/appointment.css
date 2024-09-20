@@ -32,6 +32,10 @@ body {
 .logo-img {
   height: 50px;
 }
+.header-buttons {
+  display: flex;
+  gap: 1rem; /* Adds space between the buttons */
+}
 
 .logout-button {
   background-color: #dc3545;
@@ -45,6 +49,20 @@ body {
 
 .logout-button:hover {
   background-color: #c82333;
+}
+
+.settings-button {
+  background-color: #55b02b; 
+  color: white;
+  padding: 0.7rem 1.5rem;
+  text-decoration: none;
+  font-size: 16px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.settings-button:hover {
+  background-color: #3a8218; 
 }
 
 .container {

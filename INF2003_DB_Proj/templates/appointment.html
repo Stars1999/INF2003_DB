@@ -16,7 +16,8 @@
     <div class="logo">
       <img src="{{ url_for('static', filename='images/med_logo.png') }}" alt="Logo" class="logo-img">
     </div>
-    <div class="logout">
+    <div class="header-buttons">
+      <a href="{{ url_for('settings') }}" class="settings-button">Settings</a>
       <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
     </div>
   </header>

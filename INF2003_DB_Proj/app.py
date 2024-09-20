@@ -346,7 +346,7 @@ def get_medications(med_type):
 # Settings page
 @app.route('/settings')
 def settings():
-    if 'username' in session and session['user_role'] == 'user':
+    if 'username' in session and (session['user_role'] == 'user' or session['user_role'] == 'doctor'):
         # Establish database connection
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -366,7 +366,8 @@ def settings():
                 username=session['username'],
                 email=email,
                 phone_number=phone_number,
-                address=address
+                address=address,
+                role = session['user_role']
             )
         else:
             # If no user data is found, redirect to home

@@ -32,7 +32,8 @@
   </header>
 
   <section class="settings-section">
-    <h2>User Settings</h2>
+    <h2>{{ role|capitalize }} Settings</h2>
+
     <form class="user-form" action="{{ url_for('update_account') }}" method="POST">
 
       <!-- Display Username (non-editable) -->

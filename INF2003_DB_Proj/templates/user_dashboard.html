@@ -4,12 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/user_dashboard.css') }}">
 </head>
 <body>
+  <header class="header">
+    <div class="header-logo">
+      <img src="{{ url_for('static', filename='images/med_logo.png') }}" alt="Logo" class="logo-img">
+    </div>
+
+    <div class="header-buttons">
+      <a href="{{ url_for('settings') }}" class="settings-button">Settings</a>
+      <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
+    </div>
+  </header>
+
   <h1>Welcome, {{ username }}!</h1>
   <p>This is your user dashboard.</p>
-  <a href="/settings">Settings</a>
   <a href="/appointment">View Appointments</a>
-  <a href="{{ url_for('logout') }}">Logout</a>
 </body>
 </html>
