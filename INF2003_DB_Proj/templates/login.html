@@ -7,6 +7,12 @@
   <title>Login Page</title>
   <!-- Link to external CSS file -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+  <script type="text/javascript">
+    function showAlertAndRedirect() {
+      alert("Account details updated successfully ! You will now be redirected back to the login page.");
+      window.location.href = "{{ url_for('home') }}";
+    }
+  </script>
 </head>
 <body>
   <div class="login-container">
@@ -29,5 +35,10 @@
       </div>
     </div>
   </div>
+  {% if updated %}
+  <script type="text/javascript">
+    showAlertAndRedirect();
+  </script>
+  {% endif %}
 </body>
 </html>
