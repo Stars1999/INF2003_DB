@@ -582,7 +582,8 @@ def check_appointment():
 
         # Convert the date into YYYY-MM-DD format
         parsed_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
-
+        print(parsed_date)
+        #parsed_date = date
         connection = get_db_connection()
         cursor = connection.cursor()
 
@@ -630,8 +631,9 @@ def get_available_timeslots():
         print(f"Fetching available time slots for date: {date}")  # Log the date
 
         # Convert the date into YYYY-MM-DD format
-        parsed_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
-        print(f"Formatted date for query: {parsed_date}")  # Log the formatted date
+        formatted_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+        print(f"Fetching available time slots for date: {date}")
+        print(f"Formatted date for query: {formatted_date}")
 
         connection = get_db_connection()
 
@@ -639,9 +641,9 @@ def get_available_timeslots():
         clinic_schedule_query = """
             SELECT * FROM clinic_schedule WHERE date = ? AND status = 'available'
             """
-        available_time_slots = [row['time'] for row in connection.execute(clinic_schedule_query, (parsed_date,))]
+        available_time_slots = [row['time'] for row in connection.execute(clinic_schedule_query, (formatted_date,))]
 
-        print(f"Remaining slots for {parsed_date}: {available_time_slots}")  # Log the available slots
+        print(f"Remaining slots for {formatted_date}: {available_time_slots}")  # Log the available slots
 
         return jsonify({'timeslots': available_time_slots})
 
@@ -696,6 +698,85 @@ def cancel_appointment():
     except sqlite3.Error as e:
         connection.rollback()
         print(f"Error canceling appointment: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        connection.close()
+
+@app.route('/edit-appointment', methods=['POST'])
+def edit_appointment():
+    data = request.json
+    print("Received data:", data)  # Log the incoming data for debugging
+
+    # Extract the date, current time, and new time from the JSON data
+    date = data.get('date')
+    current_time = data.get('currentTime')
+    new_time = data.get('newTime')
+    user_id = session.get('user_id')
+
+    if not date:
+        return jsonify({'error': 'Date is missing'}), 400  # Check if the date is missing and return error
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Convert the incoming date to yyyy-mm-dd format
+        formatted_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+
+        print(f"Edit request for user_id: {user_id}, current_time: {current_time}, new_time: {new_time}, date: {formatted_date}")
+
+        # Find the current schedule_id for the user's existing appointment
+        cursor.execute("""
+            SELECT a.schedule_id 
+            FROM appointments a
+            JOIN clinic_schedule cs ON a.schedule_id = cs.schedule_id
+            WHERE a.user_id = ? AND cs.date = ? AND cs.time = ?
+        """, (user_id, formatted_date, current_time))
+        current_schedule = cursor.fetchone()
+
+        if not current_schedule:
+            print("No appointment found for the provided date and current time.")
+            return jsonify({'error': 'No appointment found to edit.'}), 400
+
+        current_schedule_id = current_schedule['schedule_id']
+
+        # Find the new schedule_id for the selected time
+        cursor.execute("""
+            SELECT schedule_id 
+            FROM clinic_schedule 
+            WHERE date = ? AND time = ? AND status = 'available'
+        """, (formatted_date, new_time))
+        new_schedule = cursor.fetchone()
+
+        if not new_schedule:
+            print("No available time slot for the selected time.")
+            return jsonify({'error': 'No available time slot for the selected time.'}), 400
+
+        new_schedule_id = new_schedule['schedule_id']
+
+        # Update the clinic schedule:
+        # 1. Set the old time slot status back to 'available'
+        # 2. Set the new time slot status to 'booked'
+        cursor.execute("UPDATE clinic_schedule SET status = 'available' WHERE schedule_id = ?", (current_schedule_id,))
+        cursor.execute("UPDATE clinic_schedule SET status = 'booked' WHERE schedule_id = ?", (new_schedule_id,))
+
+        # Update the appointment to the new schedule_id
+        cursor.execute("""
+            UPDATE appointments
+            SET schedule_id = ?
+            WHERE user_id = ? AND schedule_id = ?
+        """, (new_schedule_id, user_id, current_schedule_id))
+
+        # Commit the changes to the database
+        connection.commit()
+
+        print("Appointment edited successfully.")
+        return jsonify({'success': 'Appointment edited successfully.'})
+
+    except sqlite3.Error as e:
+        connection.rollback()
+        print(f"Error editing appointment: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
     finally:

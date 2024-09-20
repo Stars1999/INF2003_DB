@@ -57,10 +57,11 @@
             onDraw: function() {
               updateDateColors(availabilityData);  // Update date colors
             },
+            format: 'YYYY-MM-DD',  // Force the format to yyyy-mm-dd
             onSelect: function(date) {
-              var selectedDate = picker.toString();  // Get date in string format
+              var selectedDate = picker.toString('YYYY-MM-DD');  // Format the date as yyyy-mm-dd
               console.log(`Selected Date: ${selectedDate}`);  // Log the selected date
-              checkAppointment(selectedDate);  // Check if the user already has an appointment
+              checkAppointment(selectedDate);  // Use the formatted date
             }
           });
         })
@@ -201,13 +202,14 @@
       }
 
       // Global editAppointment function
+      // Global editAppointment function
       function editAppointment(date, currentTime) {
         fetch(`/available_timeslots?date=${date}`)
           .then(response => response.json())
           .then(data => {
             let editFormHTML = `
               <h3>Edit Appointment</h3>
-              <form action="/edit-appointment" method="POST">
+              <form id="edit-appointment-form">
                 <input type="hidden" name="date" value="${date}">
                 <input type="hidden" name="currentTime" value="${currentTime}">
                 <label for="newTime">Select a new time slot:</label>
@@ -221,9 +223,45 @@
             editFormHTML += `</select><button type="submit">Submit</button></form>`;
 
             document.getElementById('appointment-details').innerHTML = editFormHTML;
+
+            // Handle form submission via fetch
+            document.getElementById('edit-appointment-form').addEventListener('submit', function(event) {
+              event.preventDefault();
+
+              const newTime = document.getElementById('newTime').value;
+
+              if (confirm('Are you sure you want to edit this appointment?')) {
+                fetch(`/edit-appointment`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    date: date,
+                    currentTime: currentTime,
+                    newTime: newTime
+                  })
+                })
+                .then(response => response.json())
+                .then(data => {
+                  if (data.error) {
+                    console.error("Error editing appointment:", data.error);
+                    alert(`Error: ${data.error}`);
+                  } else {
+                    alert('Appointment edited successfully');
+                    location.reload();
+                  }
+                })
+                .catch(error => {
+                  console.error('Error editing appointment:', error);
+                  alert('Error editing appointment. Please check console for details.');
+                });
+              }
+            });
           })
           .catch(error => console.error('Error fetching available time slots for editing:', error));
       }
+
     });
   </script>
   
