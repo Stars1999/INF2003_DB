@@ -33,6 +33,20 @@
       <h2>Appointment Details</h2>
       <div id="appointment-details">
         <p>Select a date to view available time slots.</p>
+        <!-- Time Slots Container (initially hidden) -->
+        <div id="time-slots-container" style="display: none;">
+            <form action="/book-appointment" method="POST">
+                <input type="hidden" name="date" id="date" value="">
+
+                <h3>Available Time Slots</h3>
+                <label for="timeslot">Select a time slot:</label>
+                <select name="timeslot" id="timeslot" required>
+                    <!-- Options will be dynamically populated by JavaScript -->
+                </select>
+
+                <button type="submit">Book Appointment</button>
+            </form>
+        </div>
       </div>
     </div>
   </div>
@@ -43,12 +57,12 @@
   <script>
     window.addEventListener('load', function() {
       let availabilityData = {};  // To store availability data
-  
+
       fetch('/available-dates')
         .then(response => response.json())
         .then(data => {
           availabilityData = data;  // Store the availability data
-  
+
           // Initialize the Pikaday calendar
           var picker = new Pikaday({
             field: document.getElementById('calendar-container'), // Attach to the container
@@ -60,12 +74,13 @@
             onSelect: function(date) {
               var selectedDate = picker.toString();  // Get date in string format
               console.log(`Selected Date: ${selectedDate}`);  // Log the selected date
-              loadTimeSlots(selectedDate);  // Call function when a date is selected
+              checkAppointment(selectedDate);  // Check if the user already has an appointment
             }
           });
         })
         .catch(error => console.error('Error fetching available dates:', error));
-  
+
+
       // Function to update calendar date colors
       function updateDateColors(availabilityData) {
         const today = new Date();
@@ -91,8 +106,46 @@
             } else {
               cell.classList.add('available');  // Mark as available
             }
+
+            // Add appointment label inside the calendar cell
+            if (availabilityData[formattedDate].appointments.length > 0) {
+              let appointmentLabel = document.createElement('div');
+              appointmentLabel.classList.add('appointment-label');
+
+              // Add each appointment time as a label
+              availabilityData[formattedDate].appointments.forEach(time => {
+                const appointmentTime = document.createElement('span');
+                appointmentTime.textContent = `Appointment @ ${time}`;
+                appointmentLabel.appendChild(appointmentTime);
+              });
+
+              // Insert the label into the cell
+              cell.appendChild(appointmentLabel);
+            }
           }
         });
+      }
+
+      // Function to check if the user has an appointment on the selected date
+      function checkAppointment(date) {
+         // Clear the appointment message and time slots separately
+        //document.getElementById('appointment-message').innerHTML = '';  // Clear only the appointment message
+        //document.getElementById('time-slots-container').style.display = 'none';  // Hide the time slots initially
+
+        fetch(`/check-appointment?date=${date}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.hasAppointment) {
+              // User already has an appointment, show appointment details
+              let appointmentDetailsHTML = `<h3>Appointment Details</h3><p>Appointment @ ${data.appointmentTime}</p>`;
+              appointmentDetailsHTML += `<p>${data.message}</p>`;
+              document.getElementById('appointment-details').innerHTML = appointmentDetailsHTML;
+            } else {
+              // No appointment, show available time slots for booking
+              loadTimeSlots(date, data.availableTimeSlots);
+            }
+          })
+          .catch(error => console.error('Error checking appointment:', error));
       }
 
       // Function to load available time slots and render dropdown
@@ -114,7 +167,6 @@
             } else {
               timeslotsHTML += '<p>No available time slots for this date.</p>';
             }
-
             timeslotsHTML += '</form>';
             document.getElementById('appointment-details').innerHTML = timeslotsHTML;
           })
