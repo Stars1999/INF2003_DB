@@ -9,6 +9,7 @@
 </head>
 <body>
 
+
   <!-- Header Section with Logo and Logout -->
   <header class="header">
     <div class="header-logo">
@@ -21,6 +22,18 @@
 
   <!-- Main Content Section -->
   <div class="main-content">
+    <!-- Add this section near the top of your HTML body -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div id="flash-message" class="flash-container">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
 
     <!-- Top Section (Queue Number and Appointments) -->
     <div class="top-section">
@@ -120,6 +133,14 @@
             <label for="search_user_id">Search User ID:</label>
             <input type="text" id="search_user_id" name="search_user_id">
             <button type="button" class="search-button" onclick="searchUserHistory()">Search</button>
+          </div>
+
+          <!-- Averages Section -->
+          <div id="averages-section" style="display: none;">
+            <h3>Average Health Metrics (Last 5 Visits)</h3>
+            <p>Average Systolic Pressure: <span id="avg-systolic">0</span> mmHg</p>
+            <p>Average Diastolic Pressure: <span id="avg-diastolic">0</span> mmHg</p>
+            <p>Average Blood Sugar: <span id="avg-blood-sugar">0</span> mg/dL</p>
           </div>
 
           <!-- History Details Section -->

@@ -295,6 +295,35 @@ body {
   cursor: not-allowed;
 }
 
+
+
+/* Flash Message Container */
+.flash-container {
+  position: relative;
+  margin: 15px auto;
+  width: 80%;
+  max-width: 1300px;
+  z-index: 1000;
+  text-align: center;
+}
+
+.alert {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.alert-success {
+    background-color: #28a745;
+}
+
+.alert-danger {
+    background-color: #dc3545;
+}
+
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .main-content, .content-section {
