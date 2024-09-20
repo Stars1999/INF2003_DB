@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import sqlite3
 import bcrypt
 from datetime import datetime, timedelta
-from db_connection import create_connection
+from cryptography.fernet import Fernet
+from db_connection import create_connection, create_tables
 
 app = Flask(__name__)
 
@@ -14,14 +15,13 @@ DATABASE = r"INF2003_Proj_DB.db"
 
 # Function to connect to the database
 def get_db_connection():
-    conn = create_connection(DATABASE)
+    conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
 # Home page with login
 @app.route('/')
 def home():
-    get_db_connection()
     return render_template('login.html')
 
 # Registration route
@@ -230,6 +230,76 @@ def submit_doctor_form():
 
         return redirect(url_for('doctor_dashboard'))
 
+# Route to get user history by userID
+@app.route('/get_user_history/<user_id>', methods=['GET'])
+def get_user_history(user_id):
+    if 'username' in session and session['user_role'] == 'doctor':
+        # Open a database connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            # Fetch all history for the given user_id
+            cursor.execute('''
+                SELECT history_id FROM User_History WHERE user_id = ?
+            ''', (user_id,))
+            histories = cursor.fetchall()
+
+            # Convert to a list of dictionaries for JSON response
+            history_list = [{'history_id': row['history_id']} for row in histories]
+
+            return jsonify(history_list)
+
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+
+        finally:
+            conn.close()
+
+    return jsonify({'error': 'Unauthorized'}), 401
+
+@app.route('/get_user_history_top5/<user_id>', methods=['GET'])
+def get_user_history_top5(user_id):
+    if 'username' in session and session['user_role'] == 'doctor':
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            # Fetch the top 5 history records for the given user_id and join to fetch doctor's name
+            cursor.execute('''
+                            SELECT uh.doc_notes, uh.blood_pressure, uh.blood_sugar, uh.visit_date, u.username AS doctor_name, uh.prescribed_med
+                            FROM User_History uh
+                            JOIN Users u ON uh.doc_id = u.user_id  
+                            WHERE uh.user_id = ?
+                            ORDER BY uh.visit_date DESC
+                            LIMIT 5
+                        ''', (user_id,))
+            history_records = cursor.fetchall()
+
+            # Format the data for JSON response
+            records = [
+                {
+                    'doc_notes': record['doc_notes'],
+                    'blood_pressure': record['blood_pressure'],
+                    'blood_sugar': record['blood_sugar'],
+                    'visit_date': record['visit_date'],
+                    'doctor_name': record['doctor_name'],
+                    'prescribed_med': record['prescribed_med']
+                } for record in history_records
+            ]
+
+            return jsonify(records)
+
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+
+        finally:
+            conn.close()
+
+    return jsonify({'error': 'Unauthorized'}), 401
+
+
+
+
+
 #Settings
 @app.route('/settings')
 def settings():
@@ -237,6 +307,79 @@ def settings():
         return render_template('settings.html', username=session['username'])
     return redirect(url_for('home'))
 
+#Settings
+@app.route('/appointment')
+def appointment():
+    if 'username' in session and session['user_role'] == 'user':
+        return render_template('appointment.html', username=session['username'])
+# Function to get available dates (assuming you're using a specific route to show available dates)
+@app.route('/available-dates')
+def get_available_dates():
+    available_dates = {
+        "2024-09-14": {"fullyBooked": False},
+        "2024-09-15": {"fullyBooked": True},
+        "2024-09-16": {"fullyBooked": False}
+    }
+    return jsonify(available_dates)
+
+@app.route('/timeslots')
+def get_timeslots():
+    try:
+        date = request.args.get('date')  # Get the selected date from the frontend
+        print(f"Fetching available time slots for date: {date}")  # Log the date
+
+        connection = get_db_connection()
+
+        # Step 1: Fetch all time slots from clinic_schedule for the selected date
+        clinic_schedule_query = """
+        SELECT time FROM clinic_schedule WHERE date = ?
+        """
+        available_time_slots = [row['time'] for row in connection.execute(clinic_schedule_query, (date,))]
+
+        # Step 2: Fetch already booked time slots from appointments table for the same date
+        booked_slots_query = """
+        SELECT time FROM appointments WHERE date = ?
+        """
+        booked_slots = [row['time'] for row in connection.execute(booked_slots_query, (date,))]
+
+        # Step 3: Filter out booked slots from the available slots
+        remaining_slots = [slot for slot in available_time_slots if slot not in booked_slots]
+
+        print(f"Remaining slots for {date}: {remaining_slots}")  # Log the available slots
+
+        return jsonify({'timeslots': remaining_slots})
+
+    except Exception as e:
+        print(f"Error fetching time slots: {str(e)}")  # Log the error
+        return "Internal Server Error", 500  # Return a 500 response
+
+# Function to handle booking appointments
+@app.route('/book-appointment', methods=['POST'])
+def book_appointment():
+    date = request.form.get('date')
+    time_slot = request.form.get('timeslot')
+    patient_id = 1  # For now, assume a hardcoded patient ID
+
+    connection = get_db_connection()
+
+    # Check if the time slot is already booked (to prevent double-booking)
+    check_booking_query = """
+    SELECT * FROM appointments WHERE appointment_date = ? AND time_slot = ?
+    """
+    existing_booking = connection.execute(check_booking_query, (date, time_slot)).fetchone()
+
+    if existing_booking:
+        return "This time slot is already booked.", 400
+
+    # Insert the new appointment
+    booking_query = """
+    INSERT INTO appointments (patient_id, appointment_date, time_slot)
+    VALUES (?, ?, ?)
+    """
+    connection.execute(booking_query, (patient_id, date, time_slot))
+    connection.commit()
+
+    return "Appointment booked successfully.", 200
 # Delete account route
 @app.route('/delete_account', methods=['POST'])
 def delete_account():
