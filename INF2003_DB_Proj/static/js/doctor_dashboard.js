@@ -74,6 +74,7 @@ function searchUserHistory() {
             <p><strong>Blood Sugar:</strong> ${history.blood_sugar || 'N/A'}</p>
             <p><strong>Visit Date:</strong> ${history.visit_date || 'N/A'}</p>
             <p><strong>Prescribed Med:</strong> ${history.prescribed_med || 'N/A'}</p>
+            <p><strong>Patient Name:</strong> ${history.patient_name || 'N/A'}</p>
             <p><strong>Doctor Name:</strong> ${history.doctor_name || 'N/A'}</p>
             <hr>
           `;
@@ -90,6 +91,16 @@ function searchUserHistory() {
       alert('Failed to retrieve user history. Please try again.');
     });
 }
+
+// Automatically hide flash messages after 5 seconds
+setTimeout(function() {
+const flashMessage = document.getElementById('flash-message');
+if (flashMessage) {
+  flashMessage.style.display = 'none';
+}
+}, 5000); // 5000ms = 5 seconds
+
+
 
 
 

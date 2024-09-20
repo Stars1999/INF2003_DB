@@ -199,6 +199,16 @@ def submit_doctor_form():
             visit_date = request.form['visit_date']
             cert_details = request.form['cert_details']
 
+            # Step 1: Check if the user ID exists in the Users table
+            cursor.execute("SELECT * FROM Users WHERE user_id = ?", (user_id,))
+            user = cursor.fetchone()
+
+            if not user:
+                # If the user does not exist, flash an error message and return to the doctor dashboard
+                flash(f"Error: User ID {user_id} does not exist.", 'danger')
+                return redirect(url_for('doctor_dashboard'))
+
+            # Step 2: Proceed with form submission since the user exists
             # Insert medical certificate data into Medical_Cert table
             cursor.execute('''
                             INSERT INTO Medical_Cert (user_id, doc_id, issue_date, cert_details)
@@ -220,15 +230,18 @@ def submit_doctor_form():
             # Commit the changes
             conn.commit()
 
-            flash('All details submitted successfully.', 'success')
+            # Flash a success message
+            flash('Doctor form details submitted successfully.', 'success')
 
         except sqlite3.Error as e:
-            flash(f"Error: {e}", 'danger')
+            # Flash an error message
+            flash(f"Error submitting doctor form: {e}", 'danger')
 
         finally:
             conn.close()
 
         return redirect(url_for('doctor_dashboard'))
+
 
 # Route to get user history by userID
 @app.route('/get_user_history/<user_id>', methods=['GET'])
@@ -257,6 +270,7 @@ def get_user_history(user_id):
 
     return jsonify({'error': 'Unauthorized'}), 401
 
+
 @app.route('/get_user_history_top5/<user_id>', methods=['GET'])
 def get_user_history_top5(user_id):
     if 'username' in session and session['user_role'] == 'doctor':
@@ -265,12 +279,16 @@ def get_user_history_top5(user_id):
         try:
             # Fetch the top 5 history records for the given user_id and join to fetch doctor's name
             cursor.execute('''
-                            SELECT uh.doc_notes, uh.blood_pressure, uh.blood_sugar, uh.visit_date, u.username AS doctor_name, uh.prescribed_med
+                            SELECT uh.doc_notes, uh.blood_pressure, uh.blood_sugar, uh.visit_date, 
+                                   d.username AS doctor_name, 
+                                   p.username AS patient_name, 
+                                   uh.prescribed_med
                             FROM User_History uh
-                            JOIN Users u ON uh.doc_id = u.user_id  
+                            JOIN Users d ON uh.doc_id = d.user_id  -- Join to get doctor's name
+                            JOIN Users p ON uh.user_id = p.user_id  -- Join to get patient's name
                             WHERE uh.user_id = ?
                             ORDER BY uh.visit_date DESC
-                            LIMIT 5
+                            LIMIT 5;
                         ''', (user_id,))
             history_records = cursor.fetchall()
 
@@ -281,8 +299,9 @@ def get_user_history_top5(user_id):
                     'blood_pressure': record['blood_pressure'],
                     'blood_sugar': record['blood_sugar'],
                     'visit_date': record['visit_date'],
-                    'doctor_name': record['doctor_name'],
-                    'prescribed_med': record['prescribed_med']
+                    'doctor_name': record['doctor_name'],  # Doctor's name
+                    'patient_name': record['patient_name'],  # Patient's name
+                    'prescribed_med': record['prescribed_med']  # Prescribed medication
                 } for record in history_records
             ]
 
@@ -295,9 +314,6 @@ def get_user_history_top5(user_id):
             conn.close()
 
     return jsonify({'error': 'Unauthorized'}), 401
-
-
-
 
 
 #Settings
