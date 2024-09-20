@@ -320,7 +320,32 @@ def get_user_history_top5(user_id):
 @app.route('/settings')
 def settings():
     if 'username' in session and session['user_role'] == 'user':
-        return render_template('settings.html', username=session['username'])
+        # Establish database connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # SQL query to fetch user details by username from the session
+        query = "SELECT email_add, phone_number, address FROM users WHERE username = ?"
+        cursor.execute(query, (session['username'],))
+        user_data = cursor.fetchone()
+        
+        if user_data:
+            # user_data[0] = email, user_data[1] = phone_number, user_data[2] = address
+            email, phone_number, address = user_data
+            
+            # Pass the fetched user details to the template
+            return render_template(
+                'settings.html',
+                username=session['username'],
+                email=email,
+                phone_number=phone_number,
+                address=address
+            )
+        else:
+            # If no user data is found, redirect to home
+            return redirect(url_for('home'))
+
+    # Redirect to home if the user is not authenticated
     return redirect(url_for('home'))
 
 #Settings
