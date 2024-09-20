@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 import sqlite3
 import bcrypt
-from cryptography.fernet import Fernet
-from db_connection import create_connection, create_tables
+from datetime import datetime, timedelta
+from db_connection import create_connection
 
 app = Flask(__name__)
 
@@ -14,13 +14,14 @@ DATABASE = r"INF2003_Proj_DB.db"
 
 # Function to connect to the database
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
+    conn = create_connection(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
 # Home page with login
 @app.route('/')
 def home():
+    get_db_connection()
     return render_template('login.html')
 
 # Registration route
@@ -125,6 +126,60 @@ def doctor_dashboard():
 
     return redirect(url_for('home'))
 
+
+@app.route('/create_schedule', methods=['POST'])
+def create_schedule():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Get tomorrow's date
+        tomorrow = (datetime.now() + timedelta(days=1)).date()
+
+        # Check if there's already a schedule for tomorrow
+        cursor.execute('SELECT * FROM Clinic_Schedule WHERE date = ?', (tomorrow,))
+        existing_rows = cursor.fetchall()
+
+        if existing_rows:
+            # If rows already exist for tomorrow, return a message indicating no action was taken
+            flash("Tomorrow's schedule already exists.", 'info')
+            return redirect(url_for('doctor_dashboard'))
+
+        # Define the time slots
+        time_slots = [
+            ('10:00', '12:00'),  # Morning session (before lunch)
+            ('14:00', '17:00')  # Afternoon session (after lunch)
+        ]
+
+        # Insert time slots for the morning and afternoon
+        for time_range in time_slots:
+            start_time = datetime.strptime(time_range[0], '%H:%M')
+            end_time = datetime.strptime(time_range[1], '%H:%M')
+
+            while start_time < end_time:
+                # Insert a 30-minute interval into Clinic_Schedule
+                cursor.execute('''
+                    INSERT INTO Clinic_Schedule (date, time, status)
+                    VALUES (?, ?, ?);
+                ''', (tomorrow, start_time.strftime('%H:%M'), 'available'))
+
+                # Increment the start time by 30 minutes
+                start_time += timedelta(minutes=30)
+
+        # Commit the transaction
+        conn.commit()
+        flash("Tomorrow's schedule created successfully!", 'success')
+        return redirect(url_for('doctor_dashboard'))
+
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        flash(f"Error creating schedule: {e}", 'danger')
+        return redirect(url_for('doctor_dashboard'))
+
+    finally:
+        conn.close()
+
+
 # Handle consolidated POST request for health, medication, and medical certificate data
 @app.route('/submit_doctor_form', methods=['POST'])
 def submit_doctor_form():
@@ -174,76 +229,6 @@ def submit_doctor_form():
             conn.close()
 
         return redirect(url_for('doctor_dashboard'))
-
-# Route to get user history by userID
-@app.route('/get_user_history/<user_id>', methods=['GET'])
-def get_user_history(user_id):
-    if 'username' in session and session['user_role'] == 'doctor':
-        # Open a database connection
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        try:
-            # Fetch all history for the given user_id
-            cursor.execute('''
-                SELECT history_id FROM User_History WHERE user_id = ?
-            ''', (user_id,))
-            histories = cursor.fetchall()
-
-            # Convert to a list of dictionaries for JSON response
-            history_list = [{'history_id': row['history_id']} for row in histories]
-
-            return jsonify(history_list)
-
-        except sqlite3.Error as e:
-            return jsonify({'error': str(e)}), 500
-
-        finally:
-            conn.close()
-
-    return jsonify({'error': 'Unauthorized'}), 401
-
-@app.route('/get_user_history_top5/<user_id>', methods=['GET'])
-def get_user_history_top5(user_id):
-    if 'username' in session and session['user_role'] == 'doctor':
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        try:
-            # Fetch the top 5 history records for the given user_id and join to fetch doctor's name
-            cursor.execute('''
-                            SELECT uh.doc_notes, uh.blood_pressure, uh.blood_sugar, uh.visit_date, u.username AS doctor_name, uh.prescribed_med
-                            FROM User_History uh
-                            JOIN Users u ON uh.doc_id = u.user_id  
-                            WHERE uh.user_id = ?
-                            ORDER BY uh.visit_date DESC
-                            LIMIT 5
-                        ''', (user_id,))
-            history_records = cursor.fetchall()
-
-            # Format the data for JSON response
-            records = [
-                {
-                    'doc_notes': record['doc_notes'],
-                    'blood_pressure': record['blood_pressure'],
-                    'blood_sugar': record['blood_sugar'],
-                    'visit_date': record['visit_date'],
-                    'doctor_name': record['doctor_name'],
-                    'prescribed_med': record['prescribed_med']
-                } for record in history_records
-            ]
-
-            return jsonify(records)
-
-        except sqlite3.Error as e:
-            return jsonify({'error': str(e)}), 500
-
-        finally:
-            conn.close()
-
-    return jsonify({'error': 'Unauthorized'}), 401
-
-
-
-
 
 #Settings
 @app.route('/settings')

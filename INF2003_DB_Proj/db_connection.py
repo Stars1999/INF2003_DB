@@ -92,8 +92,35 @@ def create_tables(conn):
             );
         ''')
 
+        # user_health Table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_health (
+                health_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INT,
+                blood_sugar VARCHAR,
+                blood_pressure VARCHAR,
+                date_log DATE,
+                FOREIGN KEY(user_id) REFERENCES Users(user_id)
+            );
+        ''')
+
         conn.commit()
         print("All tables created successfully")
 
     except sqlite3.Error as e:
         print(f"The error '{e}' occurred")
+
+# Main block to run the file standalone and call create_tables
+if __name__ == '__main__':
+    # Define the path to your SQLite database
+    DATABASE = r"INF2003_Proj_DB.db"
+
+    # Create a connection to the database
+    conn = create_connection(DATABASE)
+
+    # Call the create_tables function if the connection is successful
+    if conn is not None:
+        create_tables(conn)
+        conn.close()
+    else:
+        print("Error! Cannot create the database connection.")
