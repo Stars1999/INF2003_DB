@@ -99,7 +99,7 @@ def user_dashboard():
         return render_template('user_dashboard.html', username=session['username'])
     return redirect(url_for('home'))
 
-# Doctor dashboard
+# Doctor dashboard page
 @app.route('/doctor_dashboard')
 def doctor_dashboard():
     if 'username' in session and session['user_role'] == 'doctor':
@@ -134,7 +134,7 @@ def create_schedule():
         cursor = conn.cursor()
 
         # Get tomorrow's date
-        tomorrow = (datetime.now() + timedelta(days=1)).date()
+        tomorrow = (datetime.now() + timedelta(days=2)).date()
 
         # Check if there's already a schedule for tomorrow
         cursor.execute('SELECT * FROM Clinic_Schedule WHERE date = ?', (tomorrow,))
@@ -316,86 +316,64 @@ def get_user_history_top5(user_id):
     return jsonify({'error': 'Unauthorized'}), 401
 
 
-#Settings
+@app.route('/get_medications/<med_type>', methods=['GET'])
+def get_medications(med_type):
+    if 'username' in session and session['user_role'] == 'doctor':
+        # Open a database connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            # Fetch medications based on the selected type
+            cursor.execute('''
+                SELECT med_name FROM Medications WHERE med_type = ?
+            ''', (med_type,))
+            medications = cursor.fetchall()
+
+            # Convert to a list of dictionaries for JSON response
+            med_list = [{'med_name': row['med_name']} for row in medications]
+
+            return jsonify(med_list)
+
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+
+        finally:
+            conn.close()
+
+    return jsonify({'error': 'Unauthorized'}), 401
+
+
+# Settings page
 @app.route('/settings')
 def settings():
     if 'username' in session and session['user_role'] == 'user':
-        return render_template('settings.html', username=session['username'])
+        # Establish database connection
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # SQL query to fetch user details by username from the session
+        query = "SELECT email_add, phone_number, address FROM users WHERE username = ?"
+        cursor.execute(query, (session['username'],))
+        user_data = cursor.fetchone()
+        
+        if user_data:
+            # user_data[0] = email, user_data[1] = phone_number, user_data[2] = address
+            email, phone_number, address = user_data
+            
+            # Pass the fetched user details to the template
+            return render_template(
+                'settings.html',
+                username=session['username'],
+                email=email,
+                phone_number=phone_number,
+                address=address
+            )
+        else:
+            # If no user data is found, redirect to home
+            return redirect(url_for('home'))
+
+    # Redirect to home if the user is not authenticated
     return redirect(url_for('home'))
-
-#Settings
-@app.route('/appointment')
-def appointment():
-    if 'username' in session and session['user_role'] == 'user':
-        return render_template('appointment.html', username=session['username'])
-# Function to get available dates (assuming you're using a specific route to show available dates)
-@app.route('/available-dates')
-def get_available_dates():
-    available_dates = {
-        "2024-09-14": {"fullyBooked": False},
-        "2024-09-15": {"fullyBooked": True},
-        "2024-09-16": {"fullyBooked": False}
-    }
-    return jsonify(available_dates)
-
-@app.route('/timeslots')
-def get_timeslots():
-    try:
-        date = request.args.get('date')  # Get the selected date from the frontend
-        print(f"Fetching available time slots for date: {date}")  # Log the date
-
-        connection = get_db_connection()
-
-        # Step 1: Fetch all time slots from clinic_schedule for the selected date
-        clinic_schedule_query = """
-        SELECT time FROM clinic_schedule WHERE date = ?
-        """
-        available_time_slots = [row['time'] for row in connection.execute(clinic_schedule_query, (date,))]
-
-        # Step 2: Fetch already booked time slots from appointments table for the same date
-        booked_slots_query = """
-        SELECT time FROM appointments WHERE date = ?
-        """
-        booked_slots = [row['time'] for row in connection.execute(booked_slots_query, (date,))]
-
-        # Step 3: Filter out booked slots from the available slots
-        remaining_slots = [slot for slot in available_time_slots if slot not in booked_slots]
-
-        print(f"Remaining slots for {date}: {remaining_slots}")  # Log the available slots
-
-        return jsonify({'timeslots': remaining_slots})
-
-    except Exception as e:
-        print(f"Error fetching time slots: {str(e)}")  # Log the error
-        return "Internal Server Error", 500  # Return a 500 response
-
-# Function to handle booking appointments
-@app.route('/book-appointment', methods=['POST'])
-def book_appointment():
-    date = request.form.get('date')
-    time_slot = request.form.get('timeslot')
-    patient_id = 1  # For now, assume a hardcoded patient ID
-
-    connection = get_db_connection()
-
-    # Check if the time slot is already booked (to prevent double-booking)
-    check_booking_query = """
-    SELECT * FROM appointments WHERE appointment_date = ? AND time_slot = ?
-    """
-    existing_booking = connection.execute(check_booking_query, (date, time_slot)).fetchone()
-
-    if existing_booking:
-        return "This time slot is already booked.", 400
-
-    # Insert the new appointment
-    booking_query = """
-    INSERT INTO appointments (patient_id, appointment_date, time_slot)
-    VALUES (?, ?, ?)
-    """
-    connection.execute(booking_query, (patient_id, date, time_slot))
-    connection.commit()
-
-    return "Appointment booked successfully.", 200
 
 @app.route('/update_account', methods=['POST'])
 def update_account():
@@ -465,8 +443,187 @@ def delete_account():
 
     return redirect(url_for('home'))
 
-# Route to get available time slots for the selected date
-# Route to get available time slots for the selected date (only one definition now)
+
+# Appointments Page
+@app.route('/available-dates')
+def get_available_dates():
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Fetch dates and times for appointments from the clinic_schedule and appointments table
+        cursor.execute("""
+            SELECT cs.date, cs.time, 
+                   COUNT(a.appointment_id) as appointment_count, 
+                   COUNT(cs.schedule_id) as total_slots,
+                   SUM(CASE WHEN cs.status = 'booked' THEN 1 ELSE 0 END) as booked_slots
+            FROM clinic_schedule cs
+            LEFT JOIN appointments a ON cs.schedule_id = a.schedule_id
+            GROUP BY cs.date, cs.time
+        """)
+        rows = cursor.fetchall()
+
+        # Dictionary to store availability data
+        availability_data = {}
+
+        for row in rows:
+            date_str = row['date']  # e.g., '2024-09-14'
+            time_str = row['time']  # e.g., '10:00'
+            appointment_count = row['appointment_count']  # Number of appointments at this time
+            total_slots = row['total_slots']  # Total time slots for that date
+            booked_slots = row['booked_slots']  # Number of booked time slots
+
+            # Initialize the dictionary for this date if it doesn't exist yet
+            if date_str not in availability_data:
+                # If all slots are booked, mark as fully booked
+                fully_booked = (booked_slots == total_slots)
+                availability_data[date_str] = {
+                    'fullyBooked': fully_booked,
+                    'appointments': []  # List to store appointment times
+                }
+
+            # Add the appointment time if there is an appointment
+            if appointment_count > 0:
+                availability_data[date_str]['appointments'].append(time_str)
+                # If we add an appointment, ensure the day is not fully booked
+                availability_data[date_str]['fullyBooked'] = False
+
+        return jsonify(availability_data)
+
+    except sqlite3.Error as e:
+        print(f"Error fetching available dates: {e}")
+        return jsonify({}), 500  # Return an empty response in case of error
+
+    finally:
+        connection.close()
+
+
+
+@app.route('/appointment')
+def appointment():
+    if 'username' in session and session['user_role'] == 'user':
+        return render_template('appointment.html', username=session['username'])
+
+
+@app.route('/book-appointment', methods=['POST'])
+def book_appointment():
+    # Get the selected date and time slot from the form
+    date_str = request.form.get('date')
+    time_slot = request.form.get('timeslot')
+    user_id = session.get('user_id')
+
+    # Ensure the user is logged in
+    if not user_id:
+        flash('Please log in to book an appointment.', 'danger')
+        return redirect(url_for('home'))
+
+    # Convert the date to yyyy-mm-dd format
+    try:
+        formatted_date = datetime.strptime(date_str, '%a %b %d %Y').strftime('%Y-%m-%d')
+    except ValueError:
+        flash('Invalid date format. Please try again.', 'danger')
+        return redirect(url_for('appointment'))
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Step 1: Fetch the corresponding schedule_id from the clinic_schedule table
+        cursor.execute("""
+            SELECT schedule_id FROM clinic_schedule
+            WHERE date = ? AND time = ?
+        """, (formatted_date, time_slot))
+        schedule = cursor.fetchone()
+
+        # Check if a valid schedule was found
+        if not schedule:
+            flash('No valid schedule found for the selected date and time.', 'danger')
+            return redirect(url_for('appointment'))
+
+        schedule_id = schedule['schedule_id']
+
+        # Step 2: Update the clinic_schedule status to 'booked'
+        cursor.execute("""
+            UPDATE clinic_schedule
+            SET status = 'booked'
+            WHERE schedule_id = ?
+        """, (schedule_id,))
+
+        # Step 3: Insert a new row in the appointments table
+        cursor.execute("""
+            INSERT INTO appointments (user_id, schedule_id, status)
+            VALUES (?, ?, 'booked')
+        """, (user_id, schedule_id))
+
+        # Commit the changes
+        connection.commit()
+
+        flash('Appointment booked successfully!', 'success')
+
+    except sqlite3.Error as e:
+        connection.rollback()
+        flash(f'Error booking appointment: {e}', 'danger')
+
+    finally:
+        connection.close()
+
+    return redirect(url_for('appointment'))
+
+
+# Check if the user has an appointment on the selected date
+@app.route('/check-appointment', methods=['GET'])
+def check_appointment():
+    try:
+        date = request.args.get('date')  # Get the selected date from the frontend
+        user_id = session.get('user_id')  # Get the current user ID from the session
+
+        if not user_id:
+            return jsonify({'error': 'User not logged in'}), 401
+
+        # Convert the date into YYYY-MM-DD format
+        parsed_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+        print(parsed_date)
+        #parsed_date = date
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        # Check if the user has an appointment on this date
+        cursor.execute("""
+            SELECT a.appointment_id, cs.time FROM appointments a
+            JOIN clinic_schedule cs ON a.schedule_id = cs.schedule_id
+            WHERE cs.date = ? AND a.user_id = ?
+        """, (parsed_date, user_id))
+
+        appointment = cursor.fetchone()
+
+        if appointment:
+            # User already has an appointment
+            return jsonify({
+                'hasAppointment': True,
+                'appointmentTime': appointment['time'],
+                'message': 'You already have an appointment for today.'
+            })
+        else:
+            # Fetch available time slots for booking if no appointment exists
+            cursor.execute("""
+                SELECT time FROM clinic_schedule
+                WHERE date = ? AND status = 'available'
+            """, (parsed_date,))
+            available_time_slots = [row['time'] for row in cursor.fetchall()]
+
+            return jsonify({
+                'hasAppointment': False,
+                'availableTimeSlots': available_time_slots
+            })
+
+    except Exception as e:
+        print(f"Error checking appointment: {str(e)}")
+        return "Internal Server Error", 500
+
+    finally:
+        connection.close()
+
+
 @app.route('/available_timeslots')
 def get_available_timeslots():
     try:
@@ -474,8 +631,9 @@ def get_available_timeslots():
         print(f"Fetching available time slots for date: {date}")  # Log the date
 
         # Convert the date into YYYY-MM-DD format
-        parsed_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
-        print(f"Formatted date for query: {parsed_date}")  # Log the formatted date
+        formatted_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+        print(f"Fetching available time slots for date: {date}")
+        print(f"Formatted date for query: {formatted_date}")
 
         connection = get_db_connection()
 
@@ -483,9 +641,9 @@ def get_available_timeslots():
         clinic_schedule_query = """
             SELECT * FROM clinic_schedule WHERE date = ? AND status = 'available'
             """
-        available_time_slots = [row['time'] for row in connection.execute(clinic_schedule_query, (parsed_date,))]
+        available_time_slots = [row['time'] for row in connection.execute(clinic_schedule_query, (formatted_date,))]
 
-        print(f"Remaining slots for {parsed_date}: {available_time_slots}")  # Log the available slots
+        print(f"Remaining slots for {formatted_date}: {available_time_slots}")  # Log the available slots
 
         return jsonify({'timeslots': available_time_slots})
 
@@ -494,31 +652,137 @@ def get_available_timeslots():
         return "Internal Server Error", 500  # Return a 500 response
 
 
-@app.route('/get_medications/<med_type>', methods=['GET'])
-def get_medications(med_type):
-    if 'username' in session and session['user_role'] == 'doctor':
-        # Open a database connection
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        try:
-            # Fetch medications based on the selected type
-            cursor.execute('''
-                SELECT med_name FROM Medications WHERE med_type = ?
-            ''', (med_type,))
-            medications = cursor.fetchall()
+@app.route('/cancel-appointment', methods=['POST'])
+def cancel_appointment():
+    data = request.json
+    date = data.get('date')
+    time = data.get('time')
+    user_id = session.get('user_id')
 
-            # Convert to a list of dictionaries for JSON response
-            med_list = [{'med_name': row['med_name']} for row in medications]
+    connection = get_db_connection()
+    cursor = connection.cursor()
 
-            return jsonify(med_list)
+    try:
+        # Convert the incoming date to yyyy-mm-dd format
+        formatted_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
 
-        except sqlite3.Error as e:
-            return jsonify({'error': str(e)}), 500
+        # Log the incoming request data
+        print(f"Cancel request for date: {formatted_date}, time: {time}, user_id: {user_id}")
 
-        finally:
-            conn.close()
+        # Find the schedule_id for the selected date and time
+        cursor.execute("""
+            SELECT schedule_id FROM clinic_schedule
+            WHERE date = ? AND time = ?
+        """, (formatted_date, time))
+        schedule = cursor.fetchone()
 
-    return jsonify({'error': 'Unauthorized'}), 401
+        if not schedule:
+            print("No appointment found for the provided date and time.")
+            return jsonify({'error': 'No appointment found'}), 400
+
+        schedule_id = schedule['schedule_id']
+
+        # Delete the appointment from the appointments table
+        cursor.execute("""
+            DELETE FROM appointments WHERE user_id = ? AND schedule_id = ?
+        """, (user_id, schedule_id))
+
+        # Update the clinic schedule status back to 'available'
+        cursor.execute("UPDATE clinic_schedule SET status = 'available' WHERE schedule_id = ?", (schedule_id,))
+
+        connection.commit()
+
+        print("Appointment canceled successfully.")
+        return jsonify({'success': 'Appointment canceled successfully'})
+
+    except sqlite3.Error as e:
+        connection.rollback()
+        print(f"Error canceling appointment: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        connection.close()
+
+@app.route('/edit-appointment', methods=['POST'])
+def edit_appointment():
+    data = request.json
+    print("Received data:", data)  # Log the incoming data for debugging
+
+    # Extract the date, current time, and new time from the JSON data
+    date = data.get('date')
+    current_time = data.get('currentTime')
+    new_time = data.get('newTime')
+    user_id = session.get('user_id')
+
+    if not date:
+        return jsonify({'error': 'Date is missing'}), 400  # Check if the date is missing and return error
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Convert the incoming date to yyyy-mm-dd format
+        formatted_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+
+        print(f"Edit request for user_id: {user_id}, current_time: {current_time}, new_time: {new_time}, date: {formatted_date}")
+
+        # Find the current schedule_id for the user's existing appointment
+        cursor.execute("""
+            SELECT a.schedule_id 
+            FROM appointments a
+            JOIN clinic_schedule cs ON a.schedule_id = cs.schedule_id
+            WHERE a.user_id = ? AND cs.date = ? AND cs.time = ?
+        """, (user_id, formatted_date, current_time))
+        current_schedule = cursor.fetchone()
+
+        if not current_schedule:
+            print("No appointment found for the provided date and current time.")
+            return jsonify({'error': 'No appointment found to edit.'}), 400
+
+        current_schedule_id = current_schedule['schedule_id']
+
+        # Find the new schedule_id for the selected time
+        cursor.execute("""
+            SELECT schedule_id 
+            FROM clinic_schedule 
+            WHERE date = ? AND time = ? AND status = 'available'
+        """, (formatted_date, new_time))
+        new_schedule = cursor.fetchone()
+
+        if not new_schedule:
+            print("No available time slot for the selected time.")
+            return jsonify({'error': 'No available time slot for the selected time.'}), 400
+
+        new_schedule_id = new_schedule['schedule_id']
+
+        # Update the clinic schedule:
+        # 1. Set the old time slot status back to 'available'
+        # 2. Set the new time slot status to 'booked'
+        cursor.execute("UPDATE clinic_schedule SET status = 'available' WHERE schedule_id = ?", (current_schedule_id,))
+        cursor.execute("UPDATE clinic_schedule SET status = 'booked' WHERE schedule_id = ?", (new_schedule_id,))
+
+        # Update the appointment to the new schedule_id
+        cursor.execute("""
+            UPDATE appointments
+            SET schedule_id = ?
+            WHERE user_id = ? AND schedule_id = ?
+        """, (new_schedule_id, user_id, current_schedule_id))
+
+        # Commit the changes to the database
+        connection.commit()
+
+        print("Appointment edited successfully.")
+        return jsonify({'success': 'Appointment edited successfully.'})
+
+    except sqlite3.Error as e:
+        connection.rollback()
+        print(f"Error editing appointment: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        connection.close()
+
+
 
 # Logout route
 @app.route('/logout')
