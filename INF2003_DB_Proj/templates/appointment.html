@@ -94,38 +94,7 @@
           }
         });
       }
-  
-      // Function to load available time slots and render dropdown
-      function loadTimeSlots(date) {
-        console.log(`Requesting time slots for date: ${date}`);  // Log the date being requested
-  
-        fetch(`/timeslots?date=${date}`)
-          .then(response => response.json())
-          .then(data => {
-            console.log(`Received time slots for ${date}:`, data);  // Log the received data
-  
-            let timeslotsHTML = '<h3>Available Time Slots</h3><form action="/book-appointment" method="POST">';
-            timeslotsHTML += `<input type="hidden" name="date" id="date" value="${date}">`;
-  
-            if (data.timeslots.length > 0) {
-              // Render as dropdown with a unique id and name
-              timeslotsHTML += '<div><label for="timeslot">Select a time slot: </label>';
-              timeslotsHTML += '<select name="timeslot" id="timeslot" required>';
-              data.timeslots.forEach(slot => {
-                timeslotsHTML += `<option value="${slot}">${slot}</option>`;
-              });
-              timeslotsHTML += '</select></div>';
-              timeslotsHTML += '<button type="submit">Book Appointment</button>';
-            } else {
-              timeslotsHTML += '<p>No available time slots for this date.</p>';
-            }
-  
-            timeslotsHTML += '</form>';
-            document.getElementById('appointment-details').innerHTML = timeslotsHTML;
-  
-          })
-          .catch(error => console.error('Error fetching time slots:', error));
-      }
+
       // Function to load available time slots and render dropdown
       function loadTimeSlots(date) {
         fetch(`/available_timeslots?date=${date}`)
