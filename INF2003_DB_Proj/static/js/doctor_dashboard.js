@@ -73,6 +73,7 @@ function searchUserHistory() {
             <p><strong>Blood Pressure:</strong> ${history.blood_pressure || 'N/A'}</p>
             <p><strong>Blood Sugar:</strong> ${history.blood_sugar || 'N/A'}</p>
             <p><strong>Visit Date:</strong> ${history.visit_date || 'N/A'}</p>
+            <p><strong>Prescribed Med:</strong> ${history.prescribed_med || 'N/A'}</p>
             <p><strong>Doctor Name:</strong> ${history.doctor_name || 'N/A'}</p>
             <hr>
           `;

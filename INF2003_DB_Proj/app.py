@@ -210,7 +210,7 @@ def get_user_history_top5(user_id):
         try:
             # Fetch the top 5 history records for the given user_id and join to fetch doctor's name
             cursor.execute('''
-                            SELECT uh.doc_notes, uh.blood_pressure, uh.blood_sugar, uh.visit_date, u.username AS doctor_name
+                            SELECT uh.doc_notes, uh.blood_pressure, uh.blood_sugar, uh.visit_date, u.username AS doctor_name, uh.prescribed_med
                             FROM User_History uh
                             JOIN Users u ON uh.doc_id = u.user_id  
                             WHERE uh.user_id = ?
@@ -226,7 +226,8 @@ def get_user_history_top5(user_id):
                     'blood_pressure': record['blood_pressure'],
                     'blood_sugar': record['blood_sugar'],
                     'visit_date': record['visit_date'],
-                    'doctor_name': record['doctor_name']  # Added doctor's name to the response
+                    'doctor_name': record['doctor_name'],
+                    'prescribed_med': record['prescribed_med']
                 } for record in history_records
             ]
 
