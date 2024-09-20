@@ -10,6 +10,7 @@ window.onload = function() {
   document.getElementById("visit_date").value = today;
   document.getElementById("issue_date").value = today;
   loadMedicationNames();
+  loadTodayAppointments();
 };
 
 // JavaScript function to dynamically load medication names based on selected type
@@ -100,6 +101,70 @@ if (flashMessage) {
 }
 }, 5000); // 5000ms = 5 seconds
 
+// Function to fetch today's appointments and display them in the card
+function loadTodayAppointments() {
+  fetch('/get_today_appointments')
+    .then(response => response.json())
+    .then(data => {
+      const appointmentList = document.getElementById('appointment-list');
+      appointmentList.innerHTML = '';  // Clear any previous content
+
+      if (data.length > 0) {
+        data.forEach(appointment => {
+          const card = document.createElement('div');
+          card.classList.add('appointment-card');
+
+          card.innerHTML = `
+            <div class="appointment-header">
+              <h4>${appointment.patient}</h4>
+            </div>
+            <div class="appointment-details">
+              <p><strong>Date:</strong> ${appointment.date}</p>
+              <p><strong>Time:</strong> ${appointment.time}</p>
+            </div>
+            <button class="no-show-button" onclick="markNoShow(${appointment.user_id}, '${appointment.date}', '${appointment.time}')">Mark No-Show</button>
+          `;
+          appointmentList.appendChild(card);
+        });
+      } else {
+        // If no appointments for today, display a message
+        const noAppointments = document.createElement('div');
+        noAppointments.classList.add('no-appointments');
+        noAppointments.textContent = 'No appointments booked for today.';
+        appointmentList.appendChild(noAppointments);
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching today\'s appointments:', error);
+    });
+}
+
+// Function to mark an appointment as No-Show
+function markNoShow(user_id, date, time) {
+  fetch('/mark_no_show', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      user_id: user_id,
+      date: date,
+      time: time
+    }),
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert('Appointment marked as No-Show successfully!');
+      loadTodayAppointments();  // Reload the appointments list after update
+    } else {
+      alert('Failed to mark No-Show.');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+}
 
 
 

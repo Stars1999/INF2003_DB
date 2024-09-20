@@ -782,7 +782,88 @@ def edit_appointment():
     finally:
         connection.close()
 
+# Function to create today's appointment
+@app.route('/get_today_appointments', methods=['GET'])
+def get_today_appointments():
+    if 'username' in session and session['user_role'] == 'doctor':
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            # Use a specific test date for testing
+            today = datetime.now().date()
 
+            # Fetch appointments for the test date
+            cursor.execute('''
+                           SELECT a.user_id, u.username, cs.date, cs.time
+                           FROM Appointments a
+                           JOIN Users u ON a.user_id = u.user_id
+                           JOIN Clinic_Schedule cs ON a.schedule_id = cs.schedule_id
+                           WHERE cs.date = ? AND cs.status = 'booked';
+                       ''', (today,))
+            appointments = cursor.fetchall()
+
+            # Prepare the result as a list of dictionaries
+            appointments_list = [{'patient': row['username'], 'date': row['date'], 'time': row['time']} for row in appointments]
+
+            return jsonify(appointments_list)
+
+        except sqlite3.Error as e:
+            return jsonify({'error': str(e)}), 500
+
+        finally:
+            conn.close()
+
+    return jsonify({'error': 'Unauthorized'}), 401
+
+# Function to mark patient as a no-show
+@app.route('/mark_no_show', methods=['POST'])
+def mark_no_show():
+    if 'username' in session and session['user_role'] == 'doctor':
+        data = request.get_json()
+        date = data.get('date')
+        time = data.get('time')
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        try:
+            # First, find the schedule_id based on the date and time
+            cursor.execute('''
+                SELECT schedule_id FROM Clinic_Schedule WHERE date = ? AND time = ?;
+            ''', (date, time))
+            schedule = cursor.fetchone()
+
+            if schedule:
+                schedule_id = schedule['schedule_id']
+
+                # Update the status in the Appointments table
+                cursor.execute('''
+                    UPDATE Appointments SET status = 'No-Show' 
+                    WHERE schedule_id = ?;
+                ''', (schedule_id,))
+
+                # Commit the changes
+                conn.commit()
+
+                # Update the status in the Clinic_Schedule table
+                cursor.execute('''
+                    UPDATE Clinic_Schedule SET status = 'No-Show'
+                    WHERE schedule_id = ?;
+                ''', (schedule_id,))
+
+                conn.commit()
+
+                return jsonify({'success': True})
+            else:
+                return jsonify({'success': False, 'message': 'Schedule not found'})
+
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return jsonify({'success': False, 'error': str(e)})
+        finally:
+            conn.close()
+
+    return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
 # Logout route
 @app.route('/logout')

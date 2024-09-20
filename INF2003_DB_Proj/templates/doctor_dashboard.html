@@ -44,19 +44,19 @@
         <button class="queue-button" onclick="generateNextQueueNumber()">Next Queue</button>
       </div>
 
-      <!-- Upcoming Appointments Card -->
       <div class="appointments-card">
-        <h3>Upcoming Appointments</h3>
-        <ul>
-          <li>Sarah Connor - 2024-09-12</li>
-          <li>Michael Jordan - 2024-09-13</li>
-        </ul>
+        <h3>Today's Appointments</h3>
+        <div id="appointment-list">
+          <!-- This will be populated by JavaScript -->
+        </div>
         <!-- Form for creating tomorrow's schedule -->
         <form action="{{ url_for('create_schedule') }}" method="POST">
             <button class="queue-button" type="submit">Create Tomorrow's Schedule</button>
         </form>
       </div>
+
     </div>
+
 
     <!-- Main Section with Doctor Form on the left and Additional Card on the right -->
     <div class="content-section">
