@@ -407,6 +407,35 @@ def delete_account():
 
     return redirect(url_for('home'))
 
+# Route to get available time slots for the selected date
+# Route to get available time slots for the selected date (only one definition now)
+@app.route('/available_timeslots')
+def get_available_timeslots():
+    try:
+        date = request.args.get('date')  # Get the selected date from the frontend
+        print(f"Fetching available time slots for date: {date}")  # Log the date
+
+        # Convert the date into YYYY-MM-DD format
+        parsed_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+        print(f"Formatted date for query: {parsed_date}")  # Log the formatted date
+
+        connection = get_db_connection()
+
+        # Fetch all available time slots directly from the clinic_schedule for the selected date
+        clinic_schedule_query = """
+            SELECT * FROM clinic_schedule WHERE date = ? AND status = 'available'
+            """
+        available_time_slots = [row['time'] for row in connection.execute(clinic_schedule_query, (parsed_date,))]
+
+        print(f"Remaining slots for {parsed_date}: {available_time_slots}")  # Log the available slots
+
+        return jsonify({'timeslots': available_time_slots})
+
+    except Exception as e:
+        print(f"Error fetching time slots: {str(e)}")  # Log the error
+        return "Internal Server Error", 500  # Return a 500 response
+
+
 @app.route('/get_medications/<med_type>', methods=['GET'])
 def get_medications(med_type):
     if 'username' in session and session['user_role'] == 'doctor':
