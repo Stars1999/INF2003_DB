@@ -48,6 +48,16 @@
     border-radius: 8px;
     transition: background-color 0.3s ease;
   }
+
+  .bookapt-button {
+    background-color: rgb(32, 122, 195);
+    color: white;
+    padding: 0.7rem 1.5rem;
+    text-decoration: none;
+    font-size: 16px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+  }
   
   .logout-button:hover {
     background-color: #c82333;
@@ -66,3 +76,85 @@
   .settings-button:hover {
     background-color: #3a8218; 
   }
+
+  .center-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    margin: 0 auto; 
+  }
+
+.form-container {
+  border: 1px solid black;
+  padding: 10px;
+  width: 250px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 10px;    
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  gap: 10px;              
+}
+
+/* Label styling */
+.form-group label {
+  flex: 1;                   /* Allow label to take available space */
+  max-width: 100px;          /* Adjust label width as needed */
+  text-align: right;         /* Align the text to the right */
+  margin-right: 10px;        /* Add some space between the label and input field */
+}
+
+.input-field {
+  flex: 2;                   /* Allow input field to fill remaining space */
+  height: 30px;
+  background-color: #1E688F;
+  border: none;
+  color: white;
+  padding: 5px;              
+  box-sizing: border-box;    
+  width: 100%;               
+}
+
+.submit-button {
+  border: 2px solid black;
+  padding: 5px 10px;
+  background-color: white;
+  cursor: pointer;
+}
+
+
+.main-container {
+  display: grid;             
+  grid-template-columns: 1fr 2fr;  /* Form takes 1 part, images take 2 parts */
+  gap: 20px;                 /* Space between the form and the charts */
+  width: 80%;                
+  align-items: start;        
+  margin: 30px auto;          
+  padding-left: 40px;     
+  box-sizing: border-box;    
+}
+
+.form-container {
+  border: 1px solid black;
+  padding: 20px;             
+  background-color: #f0f8ff; 
+  box-sizing: border-box;   
+  width: 100%;               
+}
+
+.charts-container {
+  display: flex;
+  flex-direction: column;    /* Stack the charts vertically */
+  gap: 20px;                 
+  width: 100%;               
+  box-sizing: border-box;
+}
+
+.chart-img {
+  width: 100%;               
+  height: auto;
+  border: 1px solid #ddd;    
+}
