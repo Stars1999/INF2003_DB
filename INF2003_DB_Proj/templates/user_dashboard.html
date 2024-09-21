@@ -45,10 +45,16 @@
       
     </div>
 
+    {% if showchart %}
     <div class="charts-container">
-      <img src="{{ url_for('static', filename='images/bpchart.png') }}" alt="Bar Chart 1" class="chart-img">
-      <img src="{{ url_for('static', filename='images/bschart.png') }}" alt="Bar Chart 2" class="chart-img">
+        <img src="{{ url_for('static', filename='images/bpchart.png') }}" alt="Bar Chart 1" class="chart-img">
+        <img src="{{ url_for('static', filename='images/bschart.png') }}" alt="Bar Chart 2" class="chart-img">
     </div>
+    {% else %}
+    <div class="charts-container">
+        <p>No data available</p>
+    </div>
+    {% endif %}
 </div>
 
   
