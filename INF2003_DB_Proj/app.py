@@ -467,6 +467,56 @@ def delete_account():
 
     return redirect(url_for('home'))
 
+@app.route('/user_health', methods=['POST'])
+def user_health():
+    if 'username' in session:
+        username = session['username']
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Step 1: Retrieve user_id based on the username stored in the session
+        try:
+            query = "SELECT user_id FROM users WHERE username = ?"
+            cursor.execute(query, (username,))
+            user_data = cursor.fetchone()
+
+            if not user_data:
+                flash('User not found!', 'danger')
+                return redirect(url_for('user_health'))
+            
+            user_id = user_data[0]  # Extract the user_id from the fetched data
+
+            # Step 2: Get blood pressure and blood sugar from the submitted form
+            blood_pressure = request.form.get('blood-pressure')
+            blood_sugar = request.form.get('blood-sugar')
+
+            if not blood_pressure or not blood_sugar:
+                flash('Please enter valid blood pressure and blood sugar values.', 'danger')
+                return redirect(url_for('user_health'))
+
+            # Step 3: Prepare the datetime for logging
+            date_log = datetime.now()
+
+            # Step 4: Insert the new health record into the user_health table
+            insert_query = '''
+                INSERT INTO user_health (user_id, blood_sugar, blood_pressure, date_log)
+                VALUES (?, ?, ?, ?)
+            '''
+            cursor.execute(insert_query, (user_id, blood_sugar, blood_pressure, date_log))
+
+            conn.commit()
+            flash('Health data inserted successfully!', 'success')
+
+        except sqlite3.Error as e:
+            conn.rollback()  # Rollback if there's an error
+            flash(f"Database error: {e}", 'danger')
+
+        finally:
+            conn.close()  # Close the connection
+
+    return redirect(url_for('user_dashboard'))
+
 
 # Appointments Page
 @app.route('/available-dates')

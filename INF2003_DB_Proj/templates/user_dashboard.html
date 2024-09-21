@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/user_dashboard.css') }}">
+  
 </head>
 <body>
   <header class="header">
@@ -28,7 +29,7 @@
   
   <div class="main-container">
     <div class="form-container">
-      <form method="POST" action="">
+      <form method="POST" action="{{ url_for('user_health')}}">
         <div class="form-group">
           <label for="blood-pressure">Blood Pressure:</label>
           <input type="text" id="blood-pressure" name="blood-pressure" class="input-field">
@@ -41,6 +42,7 @@
         
         <button type="submit" class="submit-button">Submit button</button>
       </form>
+      
     </div>
 
     <div class="charts-container">
