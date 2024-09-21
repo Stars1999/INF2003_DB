@@ -4,6 +4,9 @@ import bcrypt
 from datetime import datetime, timedelta
 from cryptography.fernet import Fernet
 from db_connection import create_connection, create_tables
+import matplotlib
+matplotlib.use('Agg')  
+import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 
@@ -96,8 +99,28 @@ def login():
 @app.route('/user_dashboard')
 def user_dashboard():
     if 'username' in session and session['user_role'] == 'user':
+        # Sample data, simulate that u fetch from db already
+        date = ["2024-09-13", "2024-09-14", "2024-09-15"]
+        bp = [2, 4, 6]
+        bs = [1, 3, 5]
+
+        # Create the bar chart
+        plt.bar(date, bp, color='#00bfbf')
+        plt.xlabel('Date')
+        plt.ylabel('Blood Pressure')
+        plt.title('Blood Pressure Over Time')
+        plt.savefig('static/images/bpchart.png')  # Save to a static folder within your Flask project
+        plt.close()
+        plt.bar(date, bs, color='#00bfbf')
+        plt.xlabel('Date')
+        plt.ylabel('Blood Sugar')
+        plt.title('Blood Sugar Over Time')
+        plt.savefig('static/images/bschart.png')  # Save to a static folder within your Flask project
+        plt.close()
         return render_template('user_dashboard.html', username=session['username'])
-    return redirect(url_for('home'))
+
+    return render_template('user_dashboard.html', username="test")
+    # return redirect(url_for('home'))
 
 # Doctor dashboard page
 @app.route('/doctor_dashboard')

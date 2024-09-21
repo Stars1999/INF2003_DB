@@ -13,13 +13,44 @@
     </div>
 
     <div class="header-buttons">
+      <a href="{{ url_for('get_available_dates') }}" class="bookapt-button">Book Appointment</a>
       <a href="{{ url_for('settings') }}" class="settings-button">Settings</a>
       <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
     </div>
   </header>
 
-  <h1>Welcome, {{ username }}!</h1>
-  <p>This is your user dashboard.</p>
-  <a href="/appointment">View Appointments</a>
+  <div class="center-content">
+    <h1>Welcome, {{ username }}!</h1>
+    <p>This is your user dashboard.</p>
+    <a href="/appointment">View Appointments</a>
+  </div>
+
+  
+  <div class="main-container">
+    <div class="form-container">
+      <form method="POST" action="">
+        <div class="form-group">
+          <label for="blood-pressure">Blood Pressure:</label>
+          <input type="text" id="blood-pressure" name="blood-pressure" class="input-field">
+        </div>
+        
+        <div class="form-group">
+          <label for="blood-sugar">Blood Sugar:</label>
+          <input type="text" id="blood-sugar" name="blood-sugar" class="input-field">
+        </div>
+        
+        <button type="submit" class="submit-button">Submit button</button>
+      </form>
+    </div>
+
+    <div class="charts-container">
+      <img src="{{ url_for('static', filename='images/bpchart.png') }}" alt="Bar Chart 1" class="chart-img">
+      <img src="{{ url_for('static', filename='images/bschart.png') }}" alt="Bar Chart 2" class="chart-img">
+    </div>
+</div>
+
+  
+  
+
 </body>
 </html>
