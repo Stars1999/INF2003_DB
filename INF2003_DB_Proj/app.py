@@ -99,25 +99,47 @@ def login():
 @app.route('/user_dashboard')
 def user_dashboard():
     if 'username' in session and session['user_role'] == 'user':
-        # Sample data, simulate that u fetch from db already
-        date = ["2024-09-13", "2024-09-14", "2024-09-15"]
-        bp = [2, 4, 6]
-        bs = [1, 3, 5]
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        user_id = session['user_id']
+        try:
+            # Fetch distinct medication types from the Medications table
+            cursor.execute('SELECT blood_pressure, blood_sugar, date_log FROM user_health WHERE user_id = ?;', (user_id,))
+            rows = cursor.fetchall()
+            if rows:
+                bp = [float(row['blood_pressure']) for row in rows]
+                bs = [float(row['blood_sugar'])for row in rows]
+                date = [row['date_log'] for row in rows]
+                # Create the bar chart
+                plt.bar(date, bp, color='#00bfbf')
+                plt.xlabel('Date')
+                plt.ylabel('Blood Pressure')
+                plt.title('Blood Pressure Over Time')
+                plt.xticks(fontsize=5)  
+                plt.tight_layout()
+                plt.savefig('static/images/bpchart.png')  # Save to a static folder within your Flask project
+                plt.close()
+                plt.bar(date, bs, color='#00bfbf')
+                plt.xlabel('Date')
+                plt.ylabel('Blood Sugar')
+                plt.title('Blood Sugar Over Time')
+                plt.xticks(fontsize=5)  
+                plt.tight_layout()
+                plt.savefig('static/images/bschart.png')  # Save to a static folder within your Flask project
+                plt.close()
+                showchart = True
+            else:
+                showchart = False
 
-        # Create the bar chart
-        plt.bar(date, bp, color='#00bfbf')
-        plt.xlabel('Date')
-        plt.ylabel('Blood Pressure')
-        plt.title('Blood Pressure Over Time')
-        plt.savefig('static/images/bpchart.png')  # Save to a static folder within your Flask project
-        plt.close()
-        plt.bar(date, bs, color='#00bfbf')
-        plt.xlabel('Date')
-        plt.ylabel('Blood Sugar')
-        plt.title('Blood Sugar Over Time')
-        plt.savefig('static/images/bschart.png')  # Save to a static folder within your Flask project
-        plt.close()
-        return render_template('user_dashboard.html', username=session['username'])
+            return render_template('user_dashboard.html', username=session['username'], showchart=showchart)
+
+
+        except sqlite3.Error as e:
+            flash(f"Error loading dashboard: {e}", 'danger')
+            return redirect(url_for('home'))
+
+        finally:
+            conn.close()
 
     # return render_template('user_dashboard.html', username="test")
     return redirect(url_for('home'))
