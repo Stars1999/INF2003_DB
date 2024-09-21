@@ -119,8 +119,8 @@ def user_dashboard():
         plt.close()
         return render_template('user_dashboard.html', username=session['username'])
 
-    return render_template('user_dashboard.html', username="test")
-    # return redirect(url_for('home'))
+    # return render_template('user_dashboard.html', username="test")
+    return redirect(url_for('home'))
 
 # Doctor dashboard page
 @app.route('/doctor_dashboard')
