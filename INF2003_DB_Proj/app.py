@@ -547,16 +547,19 @@ def get_available_dates():
     cursor = connection.cursor()
 
     try:
-        # Fetch dates and times for appointments from the clinic_schedule and appointments table
+        # Get the user_id from the session
+        user_id = session.get('user_id')
+
+        # Fetch dates and times for appointments specific to the logged-in user
         cursor.execute("""
             SELECT cs.date, cs.time, 
                    COUNT(a.appointment_id) as appointment_count, 
                    COUNT(cs.schedule_id) as total_slots,
                    SUM(CASE WHEN cs.status = 'booked' THEN 1 ELSE 0 END) as booked_slots
             FROM clinic_schedule cs
-            LEFT JOIN appointments a ON cs.schedule_id = a.schedule_id
+            LEFT JOIN appointments a ON cs.schedule_id = a.schedule_id AND a.user_id = ?
             GROUP BY cs.date, cs.time
-        """)
+        """, (user_id,))
         rows = cursor.fetchall()
 
         # Dictionary to store availability data
@@ -571,7 +574,6 @@ def get_available_dates():
 
             # Initialize the dictionary for this date if it doesn't exist yet
             if date_str not in availability_data:
-                # If all slots are booked, mark as fully booked
                 fully_booked = (booked_slots == total_slots)
                 availability_data[date_str] = {
                     'fullyBooked': fully_booked,
