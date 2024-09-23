@@ -32,6 +32,7 @@ body {
 .logo-img {
   height: 50px;
 }
+
 .header-buttons {
   display: flex;
   gap: 1rem; /* Adds space between the buttons */
@@ -52,7 +53,7 @@ body {
 }
 
 .settings-button {
-  background-color: #55b02b; 
+  background-color: #55b02b;
   color: white;
   padding: 0.7rem 1.5rem;
   text-decoration: none;
@@ -62,7 +63,21 @@ body {
 }
 
 .settings-button:hover {
-  background-color: #3a8218; 
+  background-color: #3a8218;
+}
+
+.home-button {
+  background-color: rgb(32, 122, 195);
+  color: white;
+  padding: 0.7rem 1.5rem;
+  text-decoration: none;
+  font-size: 16px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.home-button:hover {
+  background-color: rgb(24, 90, 145);
 }
 
 .container {
@@ -85,9 +100,7 @@ body {
 
 #calendar-container {
   width: 100%; /* Full width of the calendar container */
-  background-color: white;
-  border: 1px solid #ccc;
-  padding: 10px;
+  margin: 10 0;
   min-height: 500px; /* Adjust the height to ensure visibility */
 }
 
@@ -95,8 +108,8 @@ body {
 .pika-single {
   width: 100vh; /* Full width of the calendar inside the container */
   max-width: 100%; /* Ensure the calendar does not exceed the container's width */
-  height:80vh;
-  max-height:100%;
+  height: 80vh;
+  max-height: 100%;
   background-color: white;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border: none;
@@ -106,47 +119,128 @@ body {
 .pika-lendar {
   width: 100vh; /* Take full width of the parent container */
   height: 100%;
-  max-width: 100%; /* Ensure no overflow */ 
-  max-height:100%;
-  background-color:inherit;
-  padding: 10px;
+  max-width: 100%; /* Ensure no overflow */
+  max-height: 100%;
+  background-color: inherit;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Consistent shadow with the calendar */
+  margin: 0; /* Remove default margin */
 }
 
 .pika-table {
   width: 100%; /* Ensure the calendar table takes up the full width */
 }
 
-.pika-button{
-  height:8vh;
+.pika-button {
+  height: 8vh;
 }
 
 #appointment-details {
-  background-color: white;
+  background-color: #fff;
   border: 1px solid #ccc;
-  padding: 10px;
-  min-height: 200px; /* Ensure there’s space for the form */
+  padding: 20px; /* Increased padding for better spacing */
+  min-height: 250px; /* Ensure there’s space for content */
+  border-radius: 8px; /* Add rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  font-size: 16px; /* Increased font size for readability */
+  margin: 10 0;
 }
 
-  .pika-single {
-    width: 100%;
-  }
+#appointment-details h3 {
+  font-size: 20px;
+  color: #0056b3;
+  margin-bottom: 15px;
+}
 
-  .pika-day.disabled {
-    pointer-events: none; /* Make the date unclickable */
-    opacity: 0.5; /* Make the date look disabled */
-    color: #aaa; /* Change color to indicate disabled */
-  }
+#appointment-details p {
+  margin-bottom: 10px;
+  color: #333;
+}
 
-  .pika-day.fully-booked {
-    background-color: red !important;
-    color: white !important;
-  }
+/* Ensure buttons are aligned side by side */
+.button-container {
+  display: flex;
+  gap: 10px; /* Space between buttons */
+  margin-top: 15px; /* Space between the text and the buttons */
+}
 
-  .pika-day.available {
-    background-color: green !important;
-    color: white !important;
-  }
+#appointment-details button {
+  background-color: #007bff;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  flex-grow: 1; /* Ensure both buttons take up equal space */
+}
+
+#appointment-details button:hover {
+  background-color: #0056b3; /* Darker shade on hover */
+  transform: translateY(-2px); /* Slight lift on hover */
+}
+
+#appointment-details button:active {
+  transform: translateY(0); /* Reset the lift on click */
+}
+
+#appointment-details .edit-appointment {
+  background-color: #28a745; /* Green for Edit button */
+}
+
+#appointment-details .edit-appointment:hover {
+  background-color: #218838;
+}
+
+#appointment-details .cancel-appointment {
+  background-color: #dc3545; /* Red for Cancel button */
+}
+
+#appointment-details .cancel-appointment:hover {
+  background-color: #c82333;
+}
+
+/* Style the dropdown for available time slots */
+#appointment-details select {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 15px;
+}
+
+#appointment-details form {
+  display: flex;
+  flex-direction: column;
+}
+
+#appointment-details button[type="submit"] {
+  width: 100%;
+  background-color: #28a745; /* Green for Book button */
+  margin-top: 10px;
+}
+
+/* Additional styling for Pikaday calendar */
+.pika-day.disabled {
+  pointer-events: none; /* Make the date unclickable */
+  opacity: 0.5; /* Make the date look disabled */
+  color: #aaa; /* Change color to indicate disabled */
+}
+
+.pika-day.fully-booked {
+  background-color: red !important;
+  color: white !important;
+}
+
+.pika-day.available {
+  background-color: green !important;
+  color: white !important;
+}
 
 .appointment-label {
   font-size: 12px;

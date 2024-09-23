@@ -349,6 +349,18 @@ body {
   padding-right: 10px; /* Optional: Adjust for scrollbar */
 }
 
+.appointments-card {
+  flex: 1.1;
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%);
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin-right: 20px;
+  overflow-y: auto;
+  max-height: 400px; /* You can adjust this height based on preference */
+}
+
 .appointment-card {
   background-color: #fff;
   border-radius: 8px;
@@ -376,6 +388,28 @@ body {
   color: #777;
   padding: 10px;
   text-align: center;
+}
+
+/* Styling the No-Show Button */
+.no-show-button {
+  background-color: #dc3545;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.no-show-button:hover {
+  background-color: #c82333;
+  transform: translateY(-3px);
+}
+
+.no-show-button:active {
+  transform: translateY(0);
 }
 
 

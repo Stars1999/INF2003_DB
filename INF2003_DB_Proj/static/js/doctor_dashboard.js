@@ -116,11 +116,10 @@ function loadTodayAppointments() {
 
           card.innerHTML = `
             <div class="appointment-header">
-              <h4>${appointment.patient}</h4>
+              <h4>Patient Name: ${appointment.patient}</h4>
             </div>
             <div class="appointment-details">
-              <p><strong>Date:</strong> ${appointment.date}</p>
-              <p><strong>Time:</strong> ${appointment.time}</p>
+              <p><strong>Timeslot:</strong> ${appointment.time}</p>
             </div>
             <button class="no-show-button" onclick="markNoShow(${appointment.user_id}, '${appointment.date}', '${appointment.time}')">Mark No-Show</button>
           `;

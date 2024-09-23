@@ -14,7 +14,7 @@
     </div>
 
     <div class="header-buttons">
-      <a href="{{ url_for('get_available_dates') }}" class="bookapt-button">Book Appointment</a>
+      <a href="/appointment" class="bookapt-button">Book Appointment</a>
       <a href="{{ url_for('settings') }}" class="settings-button">Settings</a>
       <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
     </div>
@@ -22,8 +22,6 @@
 
   <div class="center-content">
     <h1>Welcome, {{ username }}!</h1>
-    <p>This is your user dashboard.</p>
-    <a href="/appointment">View Appointments</a>
   </div>
 
   

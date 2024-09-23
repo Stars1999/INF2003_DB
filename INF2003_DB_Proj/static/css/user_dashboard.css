@@ -58,6 +58,11 @@
     border-radius: 8px;
     transition: background-color 0.3s ease;
   }
+
+  .bookapt-button:hover {
+    background-color: rgb(24, 90, 145);
+  }
+
   
   .logout-button:hover {
     background-color: #c82333;
