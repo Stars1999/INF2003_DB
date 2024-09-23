@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 from cryptography.fernet import Fernet
 from db_connection import create_connection, create_tables
 import matplotlib
-matplotlib.use('Agg')  
+
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 app = Flask(__name__)
@@ -16,16 +17,19 @@ app.secret_key = 'your_secret_key'
 # Path to your SQLite database
 DATABASE = r"INF2003_Proj_DB.db"
 
+
 # Function to connect to the database
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
+
 # Home page with login
 @app.route('/')
 def home():
     return render_template('login.html')
+
 
 # Registration route
 @app.route('/register', methods=['GET', 'POST'])
@@ -59,6 +63,7 @@ def register():
             conn.close()
 
     return render_template('register.html')
+
 
 # Login route
 @app.route('/login', methods=['POST'])
@@ -95,6 +100,7 @@ def login():
 
         return redirect(url_for('home'))
 
+
 # User dashboard
 @app.route('/user_dashboard')
 def user_dashboard():
@@ -104,18 +110,19 @@ def user_dashboard():
         user_id = session['user_id']
         try:
             # Fetch distinct medication types from the Medications table
-            cursor.execute('SELECT blood_pressure, blood_sugar, date_log FROM user_health WHERE user_id = ?;', (user_id,))
+            cursor.execute('SELECT blood_pressure, blood_sugar, date_log FROM user_health WHERE user_id = ?;',
+                           (user_id,))
             rows = cursor.fetchall()
             if rows:
                 bp = [float(row['blood_pressure']) for row in rows]
-                bs = [float(row['blood_sugar'])for row in rows]
+                bs = [float(row['blood_sugar']) for row in rows]
                 date = [row['date_log'] for row in rows]
                 # Create the bar chart
                 plt.bar(date, bp, color='#00bfbf')
                 plt.xlabel('Date')
                 plt.ylabel('Blood Pressure')
                 plt.title('Blood Pressure Over Time')
-                plt.xticks(fontsize=5)  
+                plt.xticks(fontsize=5)
                 plt.tight_layout()
                 plt.savefig('static/images/bpchart.png')  # Save to a static folder within your Flask project
                 plt.close()
@@ -123,7 +130,7 @@ def user_dashboard():
                 plt.xlabel('Date')
                 plt.ylabel('Blood Sugar')
                 plt.title('Blood Sugar Over Time')
-                plt.xticks(fontsize=5)  
+                plt.xticks(fontsize=5)
                 plt.tight_layout()
                 plt.savefig('static/images/bschart.png')  # Save to a static folder within your Flask project
                 plt.close()
@@ -143,6 +150,7 @@ def user_dashboard():
 
     # return render_template('user_dashboard.html', username="test")
     return redirect(url_for('home'))
+
 
 # Doctor dashboard page
 @app.route('/doctor_dashboard')
@@ -270,7 +278,8 @@ def submit_doctor_form():
             cursor.execute('''
                             INSERT INTO User_History (user_id, doc_id, doc_notes, blood_pressure, blood_sugar, prescribed_med, visit_date, certificate_id)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (user_id, doctor_id, doc_notes, blood_pressure, blood_sugar, med_name, visit_date, cert_id))
+                        ''',
+                           (user_id, doctor_id, doc_notes, blood_pressure, blood_sugar, med_name, visit_date, cert_id))
 
             # Commit the changes
             conn.commit()
@@ -395,16 +404,16 @@ def settings():
         # Establish database connection
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         # SQL query to fetch user details by username from the session
         query = "SELECT email_add, phone_number, address FROM users WHERE username = ?"
         cursor.execute(query, (session['username'],))
         user_data = cursor.fetchone()
-        
+
         if user_data:
             # user_data[0] = email, user_data[1] = phone_number, user_data[2] = address
             email, phone_number, address = user_data
-            
+
             # Pass the fetched user details to the template
             return render_template(
                 'settings.html',
@@ -412,7 +421,7 @@ def settings():
                 email=email,
                 phone_number=phone_number,
                 address=address,
-                role = session['user_role']
+                role=session['user_role']
             )
         else:
             # If no user data is found, redirect to home
@@ -420,6 +429,7 @@ def settings():
 
     # Redirect to home if the user is not authenticated
     return redirect(url_for('home'))
+
 
 @app.route('/update_account', methods=['POST'])
 def update_account():
@@ -462,12 +472,13 @@ def update_account():
         conn.close()
     return redirect(url_for('settings'))
 
+
 # Delete account route
 @app.route('/delete_account', methods=['POST'])
 def delete_account():
     if 'username' in session:
         username = session['username']
-        
+
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -489,11 +500,12 @@ def delete_account():
 
     return redirect(url_for('home'))
 
+
 @app.route('/user_health', methods=['POST'])
 def user_health():
     if 'username' in session:
         username = session['username']
-        
+
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -506,7 +518,7 @@ def user_health():
             if not user_data:
                 flash('User not found!', 'danger')
                 return redirect(url_for('user_health'))
-            
+
             user_id = user_data[0]  # Extract the user_id from the fetched data
 
             # Step 2: Get blood pressure and blood sugar from the submitted form
@@ -547,16 +559,19 @@ def get_available_dates():
     cursor = connection.cursor()
 
     try:
-        # Fetch dates and times for appointments from the clinic_schedule and appointments table
+        # Get the user_id from the session
+        user_id = session.get('user_id')
+
+        # Fetch dates and times for appointments specific to the logged-in user
         cursor.execute("""
             SELECT cs.date, cs.time, 
                    COUNT(a.appointment_id) as appointment_count, 
                    COUNT(cs.schedule_id) as total_slots,
                    SUM(CASE WHEN cs.status = 'booked' THEN 1 ELSE 0 END) as booked_slots
             FROM clinic_schedule cs
-            LEFT JOIN appointments a ON cs.schedule_id = a.schedule_id
+            LEFT JOIN appointments a ON cs.schedule_id = a.schedule_id AND a.user_id = ?
             GROUP BY cs.date, cs.time
-        """)
+        """, (user_id,))
         rows = cursor.fetchall()
 
         # Dictionary to store availability data
@@ -571,7 +586,6 @@ def get_available_dates():
 
             # Initialize the dictionary for this date if it doesn't exist yet
             if date_str not in availability_data:
-                # If all slots are booked, mark as fully booked
                 fully_booked = (booked_slots == total_slots)
                 availability_data[date_str] = {
                     'fullyBooked': fully_booked,
@@ -592,7 +606,6 @@ def get_available_dates():
 
     finally:
         connection.close()
-
 
 
 @app.route('/appointment')
@@ -679,7 +692,7 @@ def check_appointment():
         # Convert the date into YYYY-MM-DD format
         parsed_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
         print(parsed_date)
-        #parsed_date = date
+        # parsed_date = date
         connection = get_db_connection()
         cursor = connection.cursor()
 
@@ -799,6 +812,7 @@ def cancel_appointment():
     finally:
         connection.close()
 
+
 @app.route('/edit-appointment', methods=['POST'])
 def edit_appointment():
     data = request.json
@@ -820,7 +834,8 @@ def edit_appointment():
         # Convert the incoming date to yyyy-mm-dd format
         formatted_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
 
-        print(f"Edit request for user_id: {user_id}, current_time: {current_time}, new_time: {new_time}, date: {formatted_date}")
+        print(
+            f"Edit request for user_id: {user_id}, current_time: {current_time}, new_time: {new_time}, date: {formatted_date}")
 
         # Find the current schedule_id for the user's existing appointment
         cursor.execute("""
@@ -878,6 +893,7 @@ def edit_appointment():
     finally:
         connection.close()
 
+
 # Function to create today's appointment
 @app.route('/get_today_appointments', methods=['GET'])
 def get_today_appointments():
@@ -886,7 +902,8 @@ def get_today_appointments():
         cursor = conn.cursor()
         try:
             # Use a specific test date for testing
-            today = datetime.now().date()
+            # today = datetime.now().date()
+            today = '2024-09-25'
 
             # Fetch appointments for the test date
             cursor.execute('''
@@ -899,7 +916,8 @@ def get_today_appointments():
             appointments = cursor.fetchall()
 
             # Prepare the result as a list of dictionaries
-            appointments_list = [{'patient': row['username'], 'date': row['date'], 'time': row['time']} for row in appointments]
+            appointments_list = [{'patient': row['username'], 'date': row['date'], 'time': row['time']} for row in
+                                 appointments]
 
             return jsonify(appointments_list)
 
@@ -910,6 +928,7 @@ def get_today_appointments():
             conn.close()
 
     return jsonify({'error': 'Unauthorized'}), 401
+
 
 # Function to mark patient as a no-show
 @app.route('/mark_no_show', methods=['POST'])
@@ -961,11 +980,13 @@ def mark_no_show():
 
     return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
+
 # Logout route
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('home'))
+
 
 if __name__ == "__main__":
     app.run(debug=True)
