@@ -902,8 +902,7 @@ def get_today_appointments():
         cursor = conn.cursor()
         try:
             # Use a specific test date for testing
-            # today = datetime.now().date()
-            today = '2024-09-25'
+            today = datetime.now().date()
 
             # Fetch appointments for the test date
             cursor.execute('''
