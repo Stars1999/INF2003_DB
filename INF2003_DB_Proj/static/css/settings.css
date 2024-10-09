@@ -101,6 +101,34 @@
   background-color: #c82333;
 }
 
+.home-button {
+  background-color: rgb(32, 122, 195);
+  color: white;
+  padding: 0.7rem 1.5rem;
+  text-decoration: none;
+  font-size: 16px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.home-button:hover {
+  background-color: rgb(24, 90, 145);
+}
+
+.bookapt-button {
+    background-color: #55b02b;
+    color: white;
+    padding: 0.7rem 1.5rem;
+    text-decoration: none;
+    font-size: 16px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+  }
+
+  .bookapt-button:hover {
+    background-color: #3a8218;
+  }
+
 
   .user-form input {
     width: 100%;

@@ -131,35 +131,94 @@
 }
 
 
+/* Main container for layout */
 .main-container {
-  display: grid;             
-  grid-template-columns: 1fr 2fr;  /* Form takes 1 part, images take 2 parts */
-  gap: 20px;                 /* Space between the form and the charts */
-  width: 80%;                
-  align-items: start;        
-  margin: 30px auto;          
-  padding-left: 40px;     
-  box-sizing: border-box;    
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 30px;
+  width: 90%;
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .form-container {
-  border: 1px solid black;
-  padding: 20px;             
-  background-color: #f0f8ff; 
-  box-sizing: border-box;   
-  width: 100%;               
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-height: 250px;
+}
+
+.form-container h2 {
+  color: #333;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.form-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  flex: 1;
+  margin-right: 15px;
+  font-weight: bold;
+  color: #0056b3;
+}
+
+.input-field {
+  flex: 2;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f0f8ff;
+  color: #333;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #0056b3;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.submit-button:hover {
+  background-color: #003d80;
 }
 
 .charts-container {
   display: flex;
-  flex-direction: column;    /* Stack the charts vertically */
-  gap: 20px;                 
-  width: 100%;               
-  box-sizing: border-box;
+  flex-direction: column;
+  gap: 20px;
+  border-radius: 10px;
 }
 
 .chart-img {
-  width: 100%;               
-  height: auto;
-  border: 1px solid #ddd;    
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #ddd;
 }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-container {
+    grid-template-columns: 1fr;
+  }
+
+  .form-container, .charts-container {
+    padding: 15px;
+  }
+}
+

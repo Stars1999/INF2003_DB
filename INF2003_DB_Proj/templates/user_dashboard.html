@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>User Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/user_dashboard.css') }}">
-  
+
 </head>
 <body>
   <header class="header">
@@ -24,39 +24,31 @@
     <h1>Welcome, {{ username }}!</h1>
   </div>
 
-  
+
   <div class="main-container">
-    <div class="form-container">
+    <aside class="form-container">
       <form method="POST" action="{{ url_for('user_health')}}">
+        <h2>Health Metrics</h2>
         <div class="form-group">
           <label for="blood-pressure">Blood Pressure:</label>
           <input type="text" id="blood-pressure" name="blood-pressure" class="input-field">
         </div>
-        
         <div class="form-group">
           <label for="blood-sugar">Blood Sugar:</label>
           <input type="text" id="blood-sugar" name="blood-sugar" class="input-field">
         </div>
-        
-        <button type="submit" class="submit-button">Submit button</button>
+        <button type="submit" class="submit-button">Submit</button>
       </form>
-      
-    </div>
+    </aside>
 
-    {% if showchart %}
-    <div class="charts-container">
-        <img src="{{ url_for('static', filename='images/bpchart.png') }}" alt="Bar Chart 1" class="chart-img">
-        <img src="{{ url_for('static', filename='images/bschart.png') }}" alt="Bar Chart 2" class="chart-img">
-    </div>
-    {% else %}
-    <div class="charts-container">
+    <section class="charts-container">
+      {% if showchart %}
+        <img src="{{ url_for('static', filename='images/bpchart.png') }}" alt="Blood Pressure Chart" class="chart-img">
+        <img src="{{ url_for('static', filename='images/bschart.png') }}" alt="Blood Sugar Chart" class="chart-img">
+      {% else %}
         <p>No data available</p>
-    </div>
-    {% endif %}
-</div>
-
-  
-  
-
+      {% endif %}
+    </section>
+  </div>
 </body>
 </html>
