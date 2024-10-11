@@ -85,63 +85,70 @@ Debug mode is useful during development but should be disabled in production for
 app.run(debug=False)
 ```
 
-Application Features and Usage
-User Registration:
+## Application Features and Usage
 
-On the main page, click Register to create an account.
-Complete the registration form with:
-Username
-Password (encrypted and stored securely)
-Email
-Phone Number
-Address
-Click Submit to create the account. On successful registration, you’ll be redirected to the login page. If an error occurs (e.g., duplicate username), a message will be displayed.
-Login:
+1. **User Registration:**
+   - On the main page, click **Register** to create an account.
+   - Complete the registration form with:
+     - Username
+     - Password (encrypted and stored securely)
+     - Email
+     - Phone Number
+     - Address
+   - Click **Submit** to create the account. On successful registration, you’ll be redirected to the login page. If an error occurs (e.g., duplicate username), a message will be displayed.
 
-On the main page, enter your Username and Password.
-Click Login to access the appropriate dashboard (User or Doctor).
-Incorrect credentials will display a login failure message.
-User Dashboard:
+2. **Login:**
+   - On the main page, enter your Username and Password.
+   - Click **Login** to access the appropriate dashboard (User or Doctor).
+   - Incorrect credentials will display a login failure message.
 
-As a regular user, the User Dashboard provides health data tracking and visualizations.
-Features include:
-Health Data Visualization: View blood pressure and blood sugar levels over time as bar charts (images saved in the static/images folder).
-Health Data Submission: Users can submit new blood pressure and blood sugar data.
-Doctor Dashboard:
+3. **User Dashboard:**
+   - As a regular user, the User Dashboard provides health data tracking and visualizations.
+   - Features include:
+     - **Health Data Visualization:** View blood pressure and blood sugar levels over time as bar charts (images saved in the static/images folder).
+     - **Health Data Submission:** Users can submit new blood pressure and blood sugar data.
 
-Doctors have access to the Doctor Dashboard, which allows them to manage patient health records and schedules.
-Key Features:
-Patient Data Access: View patient health history, such as blood pressure, blood sugar, and prescribed medications.
-Appointment Schedule: Access upcoming appointments and manage clinic schedules.
-Appointment Management:
+4. **Doctor Dashboard:**
+   - Doctors have access to the Doctor Dashboard, which allows them to manage patient health records and schedules.
+   - Key Features:
+     - **Patient Data Access:** View patient health history, such as blood pressure, blood sugar, and prescribed medications.
+     - **Appointment Schedule:** Access upcoming appointments and manage clinic schedules.
 
-Users can view available appointment slots and book a convenient time.
-Booking:
-Go to the Appointments page.
-Select an available date and time slot and confirm.
-Cancelling and Editing:
-Users can cancel or edit existing appointments from their dashboard.
-User Health Data Submission:
+5. **Appointment Management:**
+   - Users can view available appointment slots and book a convenient time.
+   - **Booking:**
+     - Go to the Appointments page.
+     - Select an available date and time slot and confirm.
+   - **Cancelling and Editing:**
+     - Users can cancel or edit existing appointments from their dashboard.
 
-To log health metrics:
-Go to the User Health section.
-Enter Blood Pressure and Blood Sugar values.
-Click Submit to save the data. The data is timestamped and stored in the user_health table.
-Account Management:
+6. **User Health Data Submission:**
+   - To log health metrics:
+     - Go to the **User Health** section.
+     - Enter Blood Pressure and Blood Sugar values.
+     - Click **Submit** to save the data. The data is timestamped and stored in the `user_health` table.
 
-Update account details, including Email, Phone Number, and Address in Settings.
-Change Password: Enter a new password and confirm it to update securely.
-Delete Account: Users can delete their accounts, which will remove all associated data.
-Logout:
+7. **Account Management:**
+   - Update account details, including Email, Phone Number, and Address in **Settings**.
+   - **Change Password:** Enter a new password and confirm it to update securely.
+   - **Delete Account:** Users can delete their accounts, which will remove all associated data.
 
-Click Logout to securely end your session.
-Error Handling and Troubleshooting
-Database Connection Errors: Ensure INF2003_Proj_DB.db is present in the application directory. Confirm successful connection messages in the terminal when running db_connection.py.
+8. **Logout:**
+   - Click **Logout** to securely end your session.
 
-Debugging Mode: Debug mode (app.run(debug=True)) provides detailed error messages and line-by-line issues in the console, helping identify specific errors during development.
+## Error Handling and Troubleshooting
 
-Session Issues: If encountering session errors (e.g., login problems), check that the secret_key in app.py is set securely.
+- **Database Connection Errors:**
+  Ensure `INF2003_Proj_DB.db` is present in the application directory. Confirm successful connection messages in the terminal when running `db_connection.py`.
 
-Matplotlib Visualization Issues: Ensure matplotlib is installed and correctly imported. If visualizations don’t display correctly, verify the path to saved images (static/images/bpchart.png and static/images/bschart.png) in user_dashboard.html.
+- **Debugging Mode:**
+  Debug mode (`app.run(debug=True)`) provides detailed error messages and line-by-line issues in the console, helping identify specific errors during development.
 
-By following these detailed steps, you should be able to set up, configure, and run the application smoothly. Each feature and functionality is designed to offer a complete experience for both users and doctors while ensuring compatibility and proper configuration.
+- **Session Issues:**
+  If encountering session errors (e.g., login problems), check that the `secret_key` in `app.py` is set securely.
+
+- **Matplotlib Visualization Issues:**
+  Ensure `matplotlib` is installed and correctly imported. If visualizations don’t display correctly, verify the path to saved images (e.g., `static/images/bpchart.png` and `static/images/bschart.png`) in `user_dashboard.html`.
+
+By following these steps, you should be able to resolve most common issues encountered during setup and usage of the application.
+
