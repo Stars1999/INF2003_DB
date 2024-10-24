@@ -17,7 +17,7 @@ app.secret_key = 'your_secret_key'
 # DATABASE = r"INF2003_Proj_DB.db"
 
 # Initialize Firebase
-cred = credentials.Certificate("inf2003-2ba47-firebase-adminsdk-kwxph-5a92aa7cad.json")
+cred = credentials.Certificate("inf2003-2ba47-firebase-adminsdk-kwxph-440183f643.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
