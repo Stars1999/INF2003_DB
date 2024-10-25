@@ -16,9 +16,14 @@ window.addEventListener('load', function() {
             },
             format: 'YYYY-MM-DD',  // Force the format to yyyy-mm-dd
             onSelect: function(date) {
-              var selectedDate = picker.toString('YYYY-MM-DD');  // Format the date as yyyy-mm-dd
-              console.log(`Selected Date: ${selectedDate}`);  // Log the selected date
-              checkAppointment(selectedDate);  // Use the formatted date
+                // Manually extract the year, month, and day to avoid timezone issues
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');  // Months are zero-indexed, so add 1
+                const day = date.getDate().toString().padStart(2, '0');
+
+                const selectedDate = `${year}-${month}-${day}`;  // Format the date as 'YYYY-MM-DD'
+                console.log(`Selected Date: ${selectedDate}`);  // Log the selected date
+                checkAppointment(selectedDate);  // Use the formatted date
             }
           });
         })
@@ -51,28 +56,31 @@ window.addEventListener('load', function() {
               cell.classList.add('available');  // Mark as available
             }
 
-            // Add appointment label inside the calendar cell
-            if (availabilityData[formattedDate].appointments.length > 0) {
-              let appointmentLabel = document.createElement('div');
-              appointmentLabel.classList.add('appointment-label');
-
-              // Add each appointment time as a label
-              availabilityData[formattedDate].appointments.forEach(time => {
-                const appointmentTime = document.createElement('span');
-                appointmentTime.textContent = `Appointment @ ${time}`;
-                appointmentLabel.appendChild(appointmentTime);
-              });
-
-              // Insert the label into the cell
-              cell.appendChild(appointmentLabel);
-            }
+            // // Add appointment label inside the calendar cell
+            // if (availabilityData[formattedDate].appointments.length > 0) {
+            //   let appointmentLabel = document.createElement('div');
+            //   appointmentLabel.classList.add('appointment-label');
+            //
+            //   // Add each appointment time as a label
+            //   availabilityData[formattedDate].appointments.forEach(time => {
+            //     const appointmentTime = document.createElement('span');
+            //     appointmentTime.textContent = `Appointment @ ${time}`;
+            //     appointmentLabel.appendChild(appointmentTime);
+            //   });
+            //
+            //   // Insert the label into the cell
+            //   cell.appendChild(appointmentLabel);
+            //}
           }
         });
       }
 
       // Function to check if the user has an appointment on the selected date
         function checkAppointment(date) {
-          fetch(`/check-appointment?date=${date}`)
+          // Convert the date to 'YYYY-MM-DD' format
+          const formattedDate = new Date(date).toISOString().split('T')[0];  // Formats to 'YYYY-MM-DD'
+
+          fetch(`/check-appointment?date=${formattedDate}`)
             .then(response => response.json())
             .then(data => {
               let appointmentDetailsHTML = `<h3></h3>`;
@@ -90,21 +98,18 @@ window.addEventListener('load', function() {
                   </div>
                 `;
 
-                // Render the appointment details
                 document.getElementById('appointment-details').innerHTML = appointmentDetailsHTML;
 
-                // Attach event listeners to the buttons
                 document.getElementById('cancel-appointment-btn').addEventListener('click', function() {
-                  cancelAppointment(date, data.appointmentTime);  // Directly passing the actual variables
+                  cancelAppointment(date, data.appointmentTime);
                 });
 
                 document.getElementById('edit-appointment-btn').addEventListener('click', function() {
-                  editAppointment(date, data.appointmentTime);  // Directly passing the actual variables
+                  editAppointment(date, data.appointmentTime);
                 });
               } else {
-                // No appointment for this date
                 appointmentDetailsHTML += `<p>No appointment for this date. Select an available time slot to book an appointment.</p>`;
-                loadTimeSlots(date, data.availableTimeSlots); // Load available time slots for booking
+                loadTimeSlots(date);
               }
             })
             .catch(error => {
@@ -115,28 +120,31 @@ window.addEventListener('load', function() {
 
       // Function to load available time slots and render dropdown
       function loadTimeSlots(date) {
-        fetch(`/available_timeslots?date=${date}`)
-          .then(response => response.json())
-          .then(data => {
-            let timeslotsHTML = '<h3>Available Time Slots</h3><form action="/book-appointment" method="POST">';
-            timeslotsHTML += `<input type="hidden" name="date" id="date" value="${date}">`;
+          // Convert the date to 'YYYY-MM-DD' format before making the fetch call
+          const formattedDate = new Date(date).toISOString().split('T')[0];  // Formats to 'YYYY-MM-DD'
 
-            if (data.timeslots.length > 0) {
-              timeslotsHTML += '<div><label for="timeslot">Select a time slot: </label>';
-              timeslotsHTML += '<select name="timeslot" id="timeslot" required>';
-              data.timeslots.forEach(slot => {
-                timeslotsHTML += `<option value="${slot}">${slot}</option>`;
-              });
-              timeslotsHTML += '</select></div>';
-              timeslotsHTML += '<button type="submit">Book Appointment</button>';
-            } else {
-              timeslotsHTML += '<p>No available time slots for this date.</p>';
-            }
-            timeslotsHTML += '</form>';
-            document.getElementById('appointment-details').innerHTML = timeslotsHTML;
-          })
-          .catch(error => console.error('Error fetching time slots:', error));
-      }
+          fetch(`/available_timeslots?date=${formattedDate}`)
+            .then(response => response.json())
+            .then(data => {
+              let timeslotsHTML = '<h3>Available Time Slots</h3><form action="/book-appointment" method="POST">';
+              timeslotsHTML += `<input type="hidden" name="date" id="date" value="${formattedDate}">`;
+
+              if (data.timeslots.length > 0) {
+                timeslotsHTML += '<div><label for="timeslot">Select a time slot: </label>';
+                timeslotsHTML += '<select name="timeslot" id="timeslot" required>';
+                data.timeslots.forEach(slot => {
+                  timeslotsHTML += `<option value="${slot}">${slot}</option>`;
+                });
+                timeslotsHTML += '</select></div>';
+                timeslotsHTML += '<button type="submit">Book Appointment</button>';
+              } else {
+                timeslotsHTML += '<p>No available time slots for this date.</p>';
+              }
+              timeslotsHTML += '</form>';
+              document.getElementById('appointment-details').innerHTML = timeslotsHTML;
+            })
+            .catch(error => console.error('Error fetching time slots:', error));
+        }
 
       // Global cancelAppointment function
       function cancelAppointment(date, currentTime) {
@@ -169,63 +177,63 @@ window.addEventListener('load', function() {
       }
 
       // Global editAppointment function
-      function editAppointment(date, currentTime) {
-        fetch(`/available_timeslots?date=${date}`)
-          .then(response => response.json())
-          .then(data => {
-            let editFormHTML = `
-              <h3>Edit Appointment</h3>
-              <form id="edit-appointment-form">
-                <input type="hidden" name="date" value="${date}">
-                <input type="hidden" name="currentTime" value="${currentTime}">
-                <label for="newTime">Select a new time slot:</label>
-                <select name="newTime" id="newTime" required>
-            `;
+      // Global editAppointment function
+  function editAppointment(date, currentTime) {
+    fetch(`/available_timeslots?date=${date}`)
+      .then(response => response.json())
+      .then(data => {
+        let editFormHTML = `
+          <h3>Edit Appointment</h3>
+          <form id="edit-appointment-form">
+            <input type="hidden" name="date" value="${date}">
+            <input type="hidden" name="currentTime" value="${currentTime}">
+            <label for="newTime">Select a new time slot:</label>
+            <select name="newTime" id="newTime" required>
+        `;
 
-            data.timeslots.forEach(slot => {
-              editFormHTML += `<option value="${slot}">${slot}</option>`;
-            });
+        data.timeslots.forEach(slot => {
+          editFormHTML += `<option value="${slot}">${slot}</option>`;
+        });
 
-            editFormHTML += `</select><button type="submit">Submit</button></form>`;
+        editFormHTML += `</select><button type="submit">Submit</button></form>`;
 
-            document.getElementById('appointment-details').innerHTML = editFormHTML;
+        document.getElementById('appointment-details').innerHTML = editFormHTML;
 
-            // Handle form submission via fetch
-            document.getElementById('edit-appointment-form').addEventListener('submit', function(event) {
-              event.preventDefault();
+        // Handle form submission via fetch
+        document.getElementById('edit-appointment-form').addEventListener('submit', function(event) {
+          event.preventDefault();
 
-              const newTime = document.getElementById('newTime').value;
+          const newTime = document.getElementById('newTime').value;
 
-              if (confirm('Are you sure you want to edit this appointment?')) {
-                fetch(`/edit-appointment`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                    date: date,
-                    currentTime: currentTime,
-                    newTime: newTime
-                  })
-                })
-                .then(response => response.json())
-                .then(data => {
-                  if (data.error) {
-                    console.error("Error editing appointment:", data.error);
-                    alert(`Error: ${data.error}`);
-                  } else {
-                    alert('Appointment edited successfully');
-                    location.reload();
-                  }
-                })
-                .catch(error => {
-                  console.error('Error editing appointment:', error);
-                  alert('Error editing appointment. Please check console for details.');
-                });
+          if (confirm('Are you sure you want to edit this appointment?')) {
+            fetch(`/edit-appointment`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                date: date,
+                currentTime: currentTime,
+                newTime: newTime
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.error) {
+                console.error("Error editing appointment:", data.error);
+                alert(`Error: ${data.error}`);
+              } else {
+                alert('Appointment edited successfully');
+                location.reload();
               }
+            })
+            .catch(error => {
+              console.error('Error editing appointment:', error);
+              alert('Error editing appointment. Please check console for details.');
             });
-          })
-          .catch(error => console.error('Error fetching available time slots for editing:', error));
-      }
-
-    });
+          }
+        });
+      })
+      .catch(error => console.error('Error fetching available time slots for editing:', error));
+  }
+});

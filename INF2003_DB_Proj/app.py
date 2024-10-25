@@ -484,29 +484,26 @@ def user_health():
 @app.route('/available-dates')
 def get_available_dates():
     try:
-        user_id = session.get('user_id')
         availability_data = {}
 
         # Fetch clinic schedule from Firestore
-        clinic_schedule_ref = db.collection('clinic_schedule').stream()
+        clinic_schedule_ref = db.collection('Clinic_Schedule').stream()
 
         for doc in clinic_schedule_ref:
             schedule = doc.to_dict()
             date_str = schedule['date']
             time_str = schedule['time']
-            total_slots = 1
+            total_slots = 1  # Assuming 1 slot per time
             booked_slots = 1 if schedule['status'] == 'booked' else 0
 
             if date_str not in availability_data:
-                fully_booked = (booked_slots == total_slots)
                 availability_data[date_str] = {
-                    'fullyBooked': fully_booked,
+                    'fullyBooked': booked_slots == total_slots,
                     'appointments': []
                 }
 
-            if booked_slots > 0:
+            if booked_slots < total_slots:
                 availability_data[date_str]['appointments'].append(time_str)
-                availability_data[date_str]['fullyBooked'] = False
 
         return jsonify(availability_data)
     except Exception as e:
@@ -521,14 +518,14 @@ def book_appointment():
     user_id = session.get('user_id')
 
     try:
-        formatted_date = datetime.strptime(date_str, '%a %b %d %Y').strftime('%Y-%m-%d')
+        formatted_date = datetime.strptime(date_str, '%Y-%m-%d').strftime('%Y-%m-%d')
     except ValueError:
         flash('Invalid date format. Please try again.', 'danger')
         return redirect(url_for('appointment'))
 
     try:
         # Fetch the schedule document based on date and time from Firestore
-        schedule_ref = db.collection('clinic_schedule')\
+        schedule_ref = db.collection('Clinic_Schedule')\
                         .where('date', '==', formatted_date)\
                         .where('time', '==', time_slot).stream()
 
@@ -540,7 +537,7 @@ def book_appointment():
         schedule_id = schedule_docs[0].id
 
         # Update the clinic schedule status to 'booked'
-        db.collection('clinic_schedule').document(schedule_id).update({
+        db.collection('Clinic_Schedule').document(schedule_id).update({
             'status': 'booked'
         })
 
@@ -557,6 +554,105 @@ def book_appointment():
 
     return redirect(url_for('appointment'))
 
+@app.route('/edit-appointment', methods=['POST'])
+def edit_appointment():
+    try:
+        data = request.json
+        print("Received data:", data)  # Log the incoming data for debugging
+
+        # Extract the date, current time, and new time from the JSON data
+        date = data.get('date')
+        current_time = data.get('currentTime')
+        new_time = data.get('newTime')
+        user_id = session.get('user_id')
+
+        if not date:
+            return jsonify({'error': 'Date is missing'}), 400  # Check if the date is missing and return error
+
+        # Convert the incoming date to yyyy-mm-dd format
+        formatted_date = datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
+
+        print(f"Edit request for user_id: {user_id}, current_time: {current_time}, new_time: {new_time}, date: {formatted_date}")
+
+        # Step 1: Find the current schedule_id for the user's existing appointment
+        appointment_ref = db.collection('appointments').where('user_id', '==', user_id).stream()
+
+        current_schedule_id = None
+        for appointment in appointment_ref:
+            schedule_id = appointment.to_dict().get('schedule_id')
+            schedule_ref = db.collection('Clinic_Schedule').document(schedule_id).get()
+
+            if schedule_ref.exists and schedule_ref.to_dict()['date'] == formatted_date and schedule_ref.to_dict()['time'] == current_time:
+                current_schedule_id = schedule_id
+                break
+
+        if not current_schedule_id:
+            print("No appointment found for the provided date and current time.")
+            return jsonify({'error': 'No appointment found to edit.'}), 400
+
+        # Step 2: Find the new schedule_id for the selected new time
+        new_schedule_ref = db.collection('Clinic_Schedule') \
+                             .where('date', '==', formatted_date) \
+                             .where('time', '==', new_time) \
+                             .where('status', '==', 'available').stream()
+
+        new_schedule_id = None
+        for schedule in new_schedule_ref:
+            new_schedule_id = schedule.id
+            break
+
+        if not new_schedule_id:
+            print("No available time slot for the selected time.")
+            return jsonify({'error': 'No available time slot for the selected time.'}), 400
+
+        # Step 3: Update the Clinic_Schedule collection
+        # 1. Set the old time slot status back to 'available'
+        # 2. Set the new time slot status to 'booked'
+        db.collection('Clinic_Schedule').document(current_schedule_id).update({'status': 'available'})
+        db.collection('Clinic_Schedule').document(new_schedule_id).update({'status': 'booked'})
+
+        # Step 4: Update the appointment to the new schedule_id
+        appointment_query = db.collection('appointments').where('user_id', '==', user_id).where('schedule_id', '==', current_schedule_id).stream()
+        for appointment in appointment_query:
+            db.collection('appointments').document(appointment.id).update({'schedule_id': new_schedule_id})
+
+        print("Appointment edited successfully.")
+        return jsonify({'success': 'Appointment edited successfully.'})
+
+    except Exception as e:
+        print(f"Error editing appointment: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/available_timeslots', methods=['GET'])
+def get_available_timeslots():
+    try:
+        date = request.args.get('date')  # Get the selected date from the frontend
+        print(f"Fetching available time slots for date: {date}")  # Log the date
+
+        # Convert the date into YYYY-MM-DD format
+        formatted_date = datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
+        print(f"Formatted date for query: {formatted_date}")
+
+        # Initialize Firebase connection (assuming it's already set up globally in your app)
+        db = firestore.client()
+
+        # Query Firestore for available slots on the selected date
+        Clinic_schedule_ref = db.collection('Clinic_Schedule')
+        query = Clinic_schedule_ref.where('date', '==', formatted_date).where('status', '==', 'available')
+        results = query.stream()
+
+        # Extract available time slots
+        available_time_slots = [doc.to_dict()['time'] for doc in results]
+
+        print(f"Remaining slots for {formatted_date}: {available_time_slots}")  # Log the available slots
+
+        return jsonify({'timeslots': available_time_slots})
+
+    except Exception as e:
+        print(f"Error fetching time slots: {str(e)}")  # Log the error
+        return "Internal Server Error", 500  # Return a 500 response
+
 
 @app.route('/check-appointment', methods=['GET'])
 def check_appointment():
@@ -567,37 +663,40 @@ def check_appointment():
         if not user_id:
             return jsonify({'error': 'User not logged in'}), 401
 
-        parsed_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+        # Try to parse the date in the format '%a %b %d %Y'
+        try:
+            parsed_date = datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
+        except ValueError as e:
+            return jsonify({'error': f"Incorrect date format: {str(e)}"}), 400
 
-        # Check if the user has an appointment on the given date
-        appointment_ref = db.collection('appointments')\
-                            .where('user_id', '==', user_id)\
-                            .where('schedule_id', 'in', db.collection('clinic_schedule')\
-                                                         .where('date', '==', parsed_date)\
-                                                         .stream())
+        # Proceed with fetching appointments after date conversion
+        appointment_ref = db.collection('appointments').where('user_id', '==', user_id).stream()
+        appointments = [doc.to_dict() for doc in appointment_ref]
 
-        appointments = [doc.to_dict() for doc in appointment_ref.stream()]
+        for appointment in appointments:
+            schedule_id = appointment.get('schedule_id')
+            schedule_ref = db.collection('Clinic_Schedule').document(schedule_id).get()
 
-        if appointments:
-            return jsonify({
-                'hasAppointment': True,
-                'appointmentTime': appointments[0]['time'],  # Assuming Firestore has the `time` field
-                'message': 'You already have an appointment for today.'
-            })
-        else:
-            # Get available slots
-            schedule_ref = db.collection('clinic_schedule')\
-                            .where('date', '==', parsed_date)\
-                            .where('status', '==', 'available').stream()
+            if schedule_ref.exists and schedule_ref.to_dict()['date'] == parsed_date:
+                return jsonify({
+                    'hasAppointment': True,
+                    'appointmentTime': schedule_ref.to_dict()['time'],
+                    'message': 'You already have an appointment for today.'
+                })
 
-            available_time_slots = [doc.to_dict()['time'] for doc in schedule_ref]
-            return jsonify({
-                'hasAppointment': False,
-                'availableTimeSlots': available_time_slots
-            })
+        # If no appointments, get available slots for that date
+        schedule_ref = db.collection('Clinic_Schedule')\
+                         .where('date', '==', parsed_date)\
+                         .where('status', '==', 'available').stream()
+
+        available_time_slots = [doc.to_dict()['time'] for doc in schedule_ref]
+        return jsonify({
+            'hasAppointment': False,
+            'availableTimeSlots': available_time_slots
+        })
     except Exception as e:
         print(f"Error checking appointment: {str(e)}")
-        return "Internal Server Error", 500
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/cancel-appointment', methods=['POST'])
@@ -608,10 +707,10 @@ def cancel_appointment():
     user_id = session.get('user_id')
 
     try:
-        formatted_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+        formatted_date = datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
 
         # Find the schedule in Firestore
-        schedule_ref = db.collection('clinic_schedule')\
+        schedule_ref = db.collection('Clinic_Schedule')\
                          .where('date', '==', formatted_date)\
                          .where('time', '==', time).stream()
 
@@ -630,7 +729,7 @@ def cancel_appointment():
             db.collection('appointments').document(appointment.id).delete()
 
         # Update the clinic schedule status back to 'available'
-        db.collection('clinic_schedule').document(schedule_id).update({
+        db.collection('Clinic_Schedule').document(schedule_id).update({
             'status': 'available'
         })
 
