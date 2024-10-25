@@ -4,6 +4,9 @@ from firebase_admin import credentials, firestore
 import bcrypt
 from datetime import datetime, timedelta # For handling dates and times
 import matplotlib
+import time
+import psutil
+import functools
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -17,6 +20,33 @@ app.secret_key = 'your_secret_key'
 cred = credentials.Certificate("inf2003-2ba47-firebase-adminsdk-kwxph-97051cd15f.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
+
+
+def performance_analysis(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # Measure start time and memory usage
+        start_time = time.time()
+        process = psutil.Process()
+        start_memory = process.memory_info().rss / (1024 ** 2)  # in MB
+
+        # Execute the function
+        result = func(*args, **kwargs)
+
+        # Measure end time and memory usage
+        end_time = time.time()
+        end_memory = process.memory_info().rss / (1024 ** 2)  # in MB
+        execution_time = end_time - start_time
+        memory_usage = end_memory - start_memory
+
+        # Print performance analysis
+        print(f"Performance Analysis for {func.__name__}")
+        print(f"Execution Time: {execution_time:.8f} seconds")
+        print(f"Memory Usage: {memory_usage:.8f} MB")
+
+        return result
+
+    return wrapper
 
 
 @app.route('/')
@@ -55,6 +85,7 @@ def get_next_id(collection_name):
         raise Exception(f"Error generating new ID: {e}")
 
 @app.route('/register', methods=['GET', 'POST'])
+@performance_analysis
 def register():
     if request.method == 'POST':
         username = request.form['username']
@@ -91,6 +122,7 @@ def register():
     return render_template('register.html')
 
 @app.route('/login', methods=['POST'])
+@performance_analysis
 def login():
     if request.method == 'POST':
         username = request.form['username']
@@ -127,6 +159,7 @@ def login():
 
 
 @app.route('/user_dashboard')
+@performance_analysis
 def user_dashboard():
     if 'username' in session and session['user_role'] == 'user':
         user_id = session['user_id']  # Assume user_id is stored in the session after login
@@ -175,6 +208,7 @@ def user_dashboard():
 
 
 @app.route('/doctor_dashboard')
+@performance_analysis
 def doctor_dashboard():
     if 'username' in session and session['user_role'] == 'doctor':
         try:
@@ -199,6 +233,7 @@ def doctor_dashboard():
 
 
 @app.route('/create_schedule', methods=['POST'])
+@performance_analysis
 def create_schedule():
     try:
         # Get tomorrow's date
@@ -244,6 +279,7 @@ def create_schedule():
 
 
 @app.route('/submit_doctor_form', methods=['POST'])
+@performance_analysis
 def submit_doctor_form():
     if 'username' in session and session['user_role'] == 'doctor':
         try:
@@ -310,6 +346,7 @@ def submit_doctor_form():
 
 
 @app.route('/get_user_history/<user_id>', methods=['GET'])
+@performance_analysis
 def get_user_history(user_id):
     if 'username' in session and session['user_role'] == 'doctor':
         try:
@@ -339,6 +376,7 @@ def get_user_history(user_id):
 
 
 @app.route('/get_user_history_top5/<user_id>', methods=['GET'])
+@performance_analysis
 def get_user_history_top5(user_id):
     if 'username' in session and session['user_role'] == 'doctor':
         try:
@@ -412,6 +450,7 @@ def get_user_history_top5(user_id):
 
 
 @app.route('/get_medications/<med_type>', methods=['GET'])
+@performance_analysis
 def get_medications(med_type):
     if 'username' in session and session['user_role'] == 'doctor':
         try:
@@ -429,6 +468,7 @@ def get_medications(med_type):
 
 
 @app.route('/settings')
+@performance_analysis
 def settings():
     if 'username' in session and (session['user_role'] == 'user' or session['user_role'] == 'doctor'):
         try:
@@ -461,6 +501,7 @@ def settings():
 
 
 @app.route('/update_account', methods=['POST'])
+@performance_analysis
 def update_account():
     if 'username' not in session:
         flash('You are not logged in.', 'danger')
@@ -504,6 +545,7 @@ def update_account():
 
 
 @app.route('/delete_account', methods=['POST'])
+@performance_analysis
 def delete_account():
     if 'username' in session:
         username = session['username']
@@ -525,6 +567,7 @@ def delete_account():
 
 
 @app.route('/user_health', methods=['POST'])
+@performance_analysis
 def user_health():
     if 'username' in session:
         username = session['username']
@@ -566,6 +609,7 @@ def user_health():
 
 
 @app.route('/available-dates')
+@performance_analysis
 def get_available_dates():
     try:
         availability_data = {}
@@ -596,6 +640,7 @@ def get_available_dates():
 
 
 @app.route('/book-appointment', methods=['POST'])
+@performance_analysis
 def book_appointment():
     date_str = request.form.get('date')
     time_slot = request.form.get('timeslot')
@@ -645,6 +690,7 @@ def book_appointment():
 
 
 @app.route('/edit-appointment', methods=['POST'])
+@performance_analysis
 def edit_appointment():
     try:
         data = request.json
@@ -726,6 +772,7 @@ def edit_appointment():
 
 
 @app.route('/available_timeslots', methods=['GET'])
+@performance_analysis
 def get_available_timeslots():
     try:
         date = request.args.get('date')  # Get the selected date from the frontend
@@ -756,6 +803,7 @@ def get_available_timeslots():
 
 
 @app.route('/check-appointment', methods=['GET'])
+@performance_analysis
 def check_appointment():
     try:
         date = request.args.get('date')
@@ -805,6 +853,7 @@ def check_appointment():
 
 
 @app.route('/cancel-appointment', methods=['POST'])
+@performance_analysis
 def cancel_appointment():
     data = request.json
     date = data.get('date')
@@ -849,6 +898,7 @@ def cancel_appointment():
 
 
 @app.route('/get_today_appointments', methods=['GET'])
+@performance_analysis
 def get_today_appointments():
     if 'username' in session and session['user_role'] == 'doctor':
         try:
@@ -910,6 +960,7 @@ def get_today_appointments():
 
 
 @app.route('/mark_no_show', methods=['POST'])
+@performance_analysis
 def mark_no_show():
     if 'username' in session and session['user_role'] == 'doctor':
         data = request.get_json()
