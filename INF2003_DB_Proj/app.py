@@ -7,6 +7,7 @@ import matplotlib
 import time
 import psutil
 import functools
+import sqlite3
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -40,7 +41,7 @@ def performance_analysis(func):
         memory_usage = end_memory - start_memory
 
         # Print performance analysis
-        print(f"Performance Analysis for {func.__name__}")
+        print(f"NOSQL Performance Analysis for {func.__name__}")
         print(f"Execution Time: {execution_time:.8f} seconds")
         print(f"Memory Usage: {memory_usage:.8f} MB")
 
@@ -1004,7 +1005,12 @@ def mark_no_show():
 
     return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
-# Function to connect to the database
+# # Function to connect to the database
+#
+#
+# DATABASE = 'INF2003_Proj_DB.db'
+#
+#
 # def get_db_connection():
 #     conn = sqlite3.connect(DATABASE)
 #     conn.row_factory = sqlite3.Row
@@ -1012,6 +1018,7 @@ def mark_no_show():
 #
 # # Registration route
 # @app.route('/register', methods=['GET', 'POST'])
+# @performance_analysis
 # def register():
 #     if request.method == 'POST':
 #         username = request.form['username']
@@ -1046,6 +1053,7 @@ def mark_no_show():
 #
 # # Login route
 # @app.route('/login', methods=['POST'])
+# @performance_analysis
 # def login():
 #     if request.method == 'POST':
 #         username = request.form['username']
@@ -1082,6 +1090,7 @@ def mark_no_show():
 #
 # # User dashboard
 # @app.route('/user_dashboard')
+# @performance_analysis
 # def user_dashboard():
 #     if 'username' in session and session['user_role'] == 'user':
 #         conn = get_db_connection()
@@ -1133,6 +1142,7 @@ def mark_no_show():
 #
 # # Doctor dashboard page
 # @app.route('/doctor_dashboard')
+# @performance_analysis
 # def doctor_dashboard():
 #     if 'username' in session and session['user_role'] == 'doctor':
 #         # Open a database connection
@@ -1160,6 +1170,7 @@ def mark_no_show():
 #
 #
 # @app.route('/create_schedule', methods=['POST'])
+# @performance_analysis
 # def create_schedule():
 #     try:
 #         conn = get_db_connection()
@@ -1214,6 +1225,7 @@ def mark_no_show():
 #
 # # Handle consolidated POST request for health, medication, and medical certificate data
 # @app.route('/submit_doctor_form', methods=['POST'])
+# @performance_analysis
 # def submit_doctor_form():
 #     if 'username' in session and session['user_role'] == 'doctor':
 #         # Open a database connection
@@ -1278,6 +1290,7 @@ def mark_no_show():
 #
 # # Route to get user history by userID
 # @app.route('/get_user_history/<user_id>', methods=['GET'])
+# @performance_analysis
 # def get_user_history(user_id):
 #     if 'username' in session and session['user_role'] == 'doctor':
 #         # Open a database connection
@@ -1305,6 +1318,7 @@ def mark_no_show():
 #
 #
 # @app.route('/get_user_history_top5/<user_id>', methods=['GET'])
+# @performance_analysis
 # def get_user_history_top5(user_id):
 #     if 'username' in session and session['user_role'] == 'doctor':
 #         conn = get_db_connection()
@@ -1350,6 +1364,7 @@ def mark_no_show():
 #
 #
 # @app.route('/get_medications/<med_type>', methods=['GET'])
+# @performance_analysis
 # def get_medications(med_type):
 #     if 'username' in session and session['user_role'] == 'doctor':
 #         # Open a database connection
@@ -1378,6 +1393,7 @@ def mark_no_show():
 #
 # # Settings page
 # @app.route('/settings')
+# @performance_analysis
 # def settings():
 #     if 'username' in session and (session['user_role'] == 'user' or session['user_role'] == 'doctor'):
 #         # Establish database connection
@@ -1411,6 +1427,7 @@ def mark_no_show():
 #
 #
 # @app.route('/update_account', methods=['POST'])
+# @performance_analysis
 # def update_account():
 #     if 'username' not in session:
 #         flash('You are not logged in.', 'danger')
@@ -1454,6 +1471,7 @@ def mark_no_show():
 #
 # # Delete account route
 # @app.route('/delete_account', methods=['POST'])
+# @performance_analysis
 # def delete_account():
 #     if 'username' in session:
 #         username = session['username']
@@ -1481,6 +1499,7 @@ def mark_no_show():
 #
 #
 # @app.route('/user_health', methods=['POST'])
+# @performance_analysis
 # def user_health():
 #     if 'username' in session:
 #         username = session['username']
@@ -1533,6 +1552,7 @@ def mark_no_show():
 #
 # # Appointments Page
 # @app.route('/available-dates')
+# @performance_analysis
 # def get_available_dates():
 #     connection = get_db_connection()
 #     cursor = connection.cursor()
@@ -1587,10 +1607,11 @@ def mark_no_show():
 #         connection.close()
 #
 #
-
+#
 #
 #
 # @app.route('/book-appointment', methods=['POST'])
+# @performance_analysis
 # def book_appointment():
 #     # Get the selected date and time slot from the form
 #     date_str = request.form.get('date')
@@ -1604,7 +1625,7 @@ def mark_no_show():
 #
 #     # Convert the date to yyyy-mm-dd format
 #     try:
-#         formatted_date = datetime.strptime(date_str, '%a %b %d %Y').strftime('%Y-%m-%d')
+#         formatted_date = datetime.strptime(date_str, '%Y-%m-%d').strftime('%Y-%m-%d')
 #     except ValueError:
 #         flash('Invalid date format. Please try again.', 'danger')
 #         return redirect(url_for('appointment'))
@@ -1657,6 +1678,7 @@ def mark_no_show():
 #
 # # Check if the user has an appointment on the selected date
 # @app.route('/check-appointment', methods=['GET'])
+# @performance_analysis
 # def check_appointment():
 #     try:
 #         date = request.args.get('date')  # Get the selected date from the frontend
@@ -1666,7 +1688,7 @@ def mark_no_show():
 #             return jsonify({'error': 'User not logged in'}), 401
 #
 #         # Convert the date into YYYY-MM-DD format
-#         parsed_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+#         parsed_date = datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
 #         print(parsed_date)
 #         # parsed_date = date
 #         connection = get_db_connection()
@@ -1710,13 +1732,14 @@ def mark_no_show():
 #
 #
 # @app.route('/available_timeslots')
+# @performance_analysis
 # def get_available_timeslots():
 #     try:
 #         date = request.args.get('date')  # Get the selected date from the frontend
 #         print(f"Fetching available time slots for date: {date}")  # Log the date
 #
 #         # Convert the date into YYYY-MM-DD format
-#         formatted_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+#         formatted_date = datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
 #         print(f"Fetching available time slots for date: {date}")
 #         print(f"Formatted date for query: {formatted_date}")
 #
@@ -1738,6 +1761,7 @@ def mark_no_show():
 #
 #
 # @app.route('/cancel-appointment', methods=['POST'])
+# @performance_analysis
 # def cancel_appointment():
 #     data = request.json
 #     date = data.get('date')
@@ -1749,7 +1773,7 @@ def mark_no_show():
 #
 #     try:
 #         # Convert the incoming date to yyyy-mm-dd format
-#         formatted_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+#         formatted_date = datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
 #
 #         # Log the incoming request data
 #         print(f"Cancel request for date: {formatted_date}, time: {time}, user_id: {user_id}")
@@ -1790,6 +1814,7 @@ def mark_no_show():
 #
 #
 # @app.route('/edit-appointment', methods=['POST'])
+# @performance_analysis
 # def edit_appointment():
 #     data = request.json
 #     print("Received data:", data)  # Log the incoming data for debugging
@@ -1808,7 +1833,7 @@ def mark_no_show():
 #
 #     try:
 #         # Convert the incoming date to yyyy-mm-dd format
-#         formatted_date = datetime.strptime(date, '%a %b %d %Y').strftime('%Y-%m-%d')
+#         formatted_date = datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
 #
 #         print(
 #             f"Edit request for user_id: {user_id}, current_time: {current_time}, new_time: {new_time}, date: {formatted_date}")
@@ -1872,6 +1897,7 @@ def mark_no_show():
 #
 # # Function to create today's appointment
 # @app.route('/get_today_appointments', methods=['GET'])
+# @performance_analysis
 # def get_today_appointments():
 #     if 'username' in session and session['user_role'] == 'doctor':
 #         conn = get_db_connection()
@@ -1907,6 +1933,7 @@ def mark_no_show():
 #
 # # Function to mark patient as a no-show
 # @app.route('/mark_no_show', methods=['POST'])
+# @performance_analysis
 # def mark_no_show():
 #     if 'username' in session and session['user_role'] == 'doctor':
 #         data = request.get_json()
