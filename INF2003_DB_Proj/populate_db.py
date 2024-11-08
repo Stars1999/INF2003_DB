@@ -1,10 +1,11 @@
-import firebase_admin
-from firebase_admin import credentials, firestore
+from pymongo import MongoClient
 
-# Firebase initialization
-cred = credentials.Certificate("inf2003-2ba47-firebase-adminsdk-kwxph-97051cd15f.json")
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+# MongoDB connection string
+client = MongoClient("mongodb+srv://2301772:Pa55w0rd@inf2003.n4h2o.mongodb.net/?retryWrites=true&w=majority")
+
+# Specify the database and collection
+db = client['INF2003']
+medications_collection = db['Medications']
 
 # Medication data
 medications = [
@@ -16,12 +17,11 @@ medications = [
     {"medication_id": "6", "med_name": "Advil", "med_description": "Ibuprofen-based medication used for fever and pain.", "med_type": "Fever", "med_quantity": 100}
 ]
 
-# Function to upload medication data to Firestore
+# Function to upload medication data to MongoDB
 def upload_data():
     try:
-        # Add medications to Firestore
-        for med in medications:
-            db.collection('Medications').add(med)
+        # Insert medications into MongoDB collection
+        medications_collection.insert_many(medications)
         print("Medications uploaded successfully.")
     except Exception as e:
         print(f"Error: {str(e)}")
