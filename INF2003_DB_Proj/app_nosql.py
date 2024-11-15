@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from pymongo.errors import OperationFailure
 from flask import Flask, request, render_template, redirect, url_for, flash, session, jsonify
 import bcrypt
 from datetime import datetime, timedelta # For handling dates and times
@@ -593,127 +594,141 @@ def get_available_dates():
 @app.route('/book-appointment', methods=['POST'])
 @performance_analysis
 def book_appointment():
+    # Start a session using the already initialized client
+    txn_session = client.start_session()
+
+    # Retrieve form data
     date_str = request.form.get('date')
     time_slot = request.form.get('timeslot')
-    user_id = session.get('user_id')
+    user_id = session.get('user_id')  # Assume user_id is stored in session after login
 
-    try:
-        formatted_date = datetime.strptime(date_str, '%Y-%m-%d').strftime('%Y-%m-%d')
-    except ValueError:
-        flash('Invalid date format. Please try again.', 'danger')
+    if not date_str or not time_slot or not user_id:
+        flash('Invalid data. Please try again.', 'danger')
         return redirect(url_for('appointment'))
 
     try:
-        # Fetch the schedule document based on date and time from MongoDB
-        schedule = db['Clinic_Schedule'].find_one({
-            'date': formatted_date,
-            'time': time_slot
-        })
+        with txn_session.start_transaction():
+            # Step 1: Find and update schedule status
+            schedule = db['Clinic_Schedule'].find_one_and_update(
+                {'date': date_str, 'time': time_slot, 'status': 'available'},
+                {'$set': {'status': 'booked'}},
+                session=txn_session
+            )
+            if not schedule:
+                flash("No available schedule for selected time.", 'danger')
+                return redirect(url_for('appointment'))
 
-        if not schedule:
-            flash('No valid schedule found for the selected date and time.', 'danger')
-            return redirect(url_for('appointment'))
+            # Step 2: Insert appointment
+            appointment_id = get_next_id('appointments')
+            db['appointments'].insert_one(
+                {
+                    'appointment_id': appointment_id,
+                    'user_id': user_id,
+                    'schedule_id': schedule['schedule_id'],
+                    'status': 'booked'
+                },
+                session=txn_session
+            )
 
-        # Get the 'schedule_id' from the schedule data
-        schedule_id = schedule.get('schedule_id')
-        appt_id = get_next_id('appointments')
+        flash("Appointment booked successfully!", 'success')
+        return redirect(url_for('appointment'))
 
-        # Update the clinic schedule status to 'booked'
-        db['Clinic_Schedule'].update_one(
-            {'schedule_id': schedule_id},
-            {'$set': {'status': 'booked'}}
-        )
+    except OperationFailure as e:
+        print(f"Error: {e}")
+        txn_session.abort_transaction()
+        flash("Error booking appointment. Please try again.", 'danger')
+        return redirect(url_for('appointment'))
 
-        # Insert a new appointment
-        db['appointments'].insert_one({
-            'appointment_id': appt_id,
-            'user_id': user_id,
-            'schedule_id': schedule_id,
-            'status': 'booked'
-        })
-
-        flash('Appointment booked successfully!', 'success')
-    except Exception as e:
-        flash(f'Error booking appointment: {e}', 'danger')
-
-    return redirect(url_for('appointment'))
+    finally:
+        txn_session.end_session()
 
 
 @app.route('/edit-appointment', methods=['POST'])
 @performance_analysis
 def edit_appointment():
+    data = request.json
+    print("Received data:", data)  # Log the incoming data for debugging
+
+    # Extract the date, current time, and new time from the JSON data
+    date = data.get('date')
+    current_time = data.get('currentTime')
+    new_time = data.get('newTime')
+    user_id = session.get('user_id')
+
+    if not date:
+        return jsonify({'error': 'Date is missing'}), 400  # Check if the date is missing and return error
+
+    # Start a MongoDB session for transaction management
+    txn_session = client.start_session()
+
     try:
-        data = request.json
-        print("Received data:", data)  # Log the incoming data for debugging
-
-        # Extract the date, current time, and new time from the JSON data
-        date = data.get('date')
-        current_time = data.get('currentTime')
-        new_time = data.get('newTime')
-        user_id = session.get('user_id')
-
-        if not date:
-            return jsonify({'error': 'Date is missing'}), 400  # Check if the date is missing and return error
-
         # Convert the incoming date to yyyy-mm-dd format
         formatted_date = datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
 
-        print(f"Edit request for user_id: {user_id}, current_time: {current_time}, new_time: {new_time}, date: {formatted_date}")
+        print(
+            f"Edit request for user_id: {user_id}, current_time: {current_time}, new_time: {new_time}, date: {formatted_date}")
 
-        # Step 1: Find the current schedule_id for the user's existing appointment
-        current_appointment = db['appointments'].find_one({'user_id': user_id})
-        if not current_appointment:
-            print("No appointment found for the provided date and current time.")
-            return jsonify({'error': 'No appointment found to edit.'}), 400
+        with txn_session.start_transaction():
+            # Step 1: Find the current schedule_id for the user's existing appointment
+            current_appointment = db['appointments'].find_one({
+                'user_id': user_id,
+                'schedule_id': {
+                    '$in': [s['schedule_id'] for s in db['Clinic_Schedule'].find(
+                        {'date': formatted_date, 'time': current_time}, {'schedule_id': 1}, session=txn_session
+                    )]
+                }
+            }, session=txn_session)
 
-        current_schedule_id = current_appointment['schedule_id']
+            if not current_appointment:
+                print("No appointment found for the provided date and current time.")
+                return jsonify({'error': 'No appointment found to edit.'}), 400
 
-        # Verify if the appointment date and time match the provided data
-        current_schedule = db['Clinic_Schedule'].find_one({
-            'schedule_id': current_schedule_id,
-            'date': formatted_date,
-            'time': current_time
-        })
-        if not current_schedule:
-            print("No matching appointment found for the provided date and time.")
-            return jsonify({'error': 'No matching appointment found for the provided date and time.'}), 400
+            current_schedule_id = current_appointment['schedule_id']
 
-        # Step 2: Find the new schedule_id for the selected new time
-        new_schedule = db['Clinic_Schedule'].find_one({
-            'date': formatted_date,
-            'time': new_time,
-            'status': 'available'
-        })
-        if not new_schedule:
-            print("No available time slot for the selected time.")
-            return jsonify({'error': 'No available time slot for the selected time.'}), 400
+            # Step 2: Find the new schedule_id for the selected time
+            new_schedule = db['Clinic_Schedule'].find_one({
+                'date': formatted_date,
+                'time': new_time,
+                'status': 'available'
+            }, session=txn_session)
 
-        new_schedule_id = new_schedule['schedule_id']
+            if not new_schedule:
+                print("No available time slot for the selected time.")
+                return jsonify({'error': 'No available time slot for the selected time.'}), 400
 
-        # Step 3: Update the Clinic_Schedule collection
-        # 1. Set the old time slot status back to 'available'
-        # 2. Set the new time slot status to 'booked'
-        db['Clinic_Schedule'].update_one(
-            {'schedule_id': current_schedule_id},
-            {'$set': {'status': 'available'}}
-        )
-        db['Clinic_Schedule'].update_one(
-            {'schedule_id': new_schedule_id},
-            {'$set': {'status': 'booked'}}
-        )
+            new_schedule_id = new_schedule['schedule_id']
 
-        # Step 4: Update the appointment to the new schedule_id
-        db['appointments'].update_one(
-            {'user_id': user_id, 'schedule_id': current_schedule_id},
-            {'$set': {'schedule_id': new_schedule_id}}
-        )
+            # Step 3: Update the Clinic_Schedule collection
+            # 1. Set the old time slot status back to 'available'
+            # 2. Set the new time slot status to 'booked'
+            db['Clinic_Schedule'].update_one(
+                {'schedule_id': current_schedule_id},
+                {'$set': {'status': 'available'}},
+                session=txn_session
+            )
+            db['Clinic_Schedule'].update_one(
+                {'schedule_id': new_schedule_id},
+                {'$set': {'status': 'booked'}},
+                session=txn_session
+            )
+
+            # Step 4: Update the appointment to the new schedule_id
+            db['appointments'].update_one(
+                {'user_id': user_id, 'schedule_id': current_schedule_id},
+                {'$set': {'schedule_id': new_schedule_id}},
+                session=txn_session
+            )
 
         print("Appointment edited successfully.")
         return jsonify({'success': 'Appointment edited successfully.'})
 
     except Exception as e:
+        txn_session.abort_transaction()
         print(f"Error editing appointment: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+    finally:
+        txn_session.end_session()
 
 
 @app.route('/available_timeslots', methods=['GET'])
@@ -802,40 +817,53 @@ def cancel_appointment():
     time = data.get('time')
     user_id = session.get('user_id')
 
+    if not date or not time or not user_id:
+        return jsonify({'error': 'Required data is missing'}), 400
+
+    # Start a session using the already initialized client
+    txn_session = client.start_session()
+
     try:
         # Parse the date in the correct format
         formatted_date = datetime.strptime(date, '%Y-%m-%d').strftime('%Y-%m-%d')
 
-        # Find the schedule in MongoDB using the `date` and `time`
-        schedule = db['Clinic_Schedule'].find_one({
-            'date': formatted_date,
-            'time': time
-        })
+        with txn_session.start_transaction():
+            # Find the schedule in MongoDB using the `date` and `time`
+            schedule = db['Clinic_Schedule'].find_one({
+                'date': formatted_date,
+                'time': time
+            }, session=txn_session)
 
-        if not schedule:
-            return jsonify({'error': 'No appointment found'}), 400
+            if not schedule:
+                return jsonify({'error': 'No appointment found'}), 400
 
-        # Get the `schedule_id` from the document data
-        schedule_id = schedule.get('schedule_id')
+            # Get the `schedule_id` from the document data
+            schedule_id = schedule.get('schedule_id')
 
-        # Find and delete the appointment from MongoDB using `schedule_id` and `user_id`
-        result = db['appointments'].delete_one({
-            'user_id': user_id,
-            'schedule_id': schedule_id
-        })
+            # Find and delete the appointment from MongoDB using `schedule_id` and `user_id`
+            result = db['appointments'].delete_one(
+                {'user_id': user_id, 'schedule_id': schedule_id},
+                session=txn_session
+            )
 
-        if result.deleted_count == 0:
-            return jsonify({'error': 'No appointment found to cancel'}), 400
+            if result.deleted_count == 0:
+                return jsonify({'error': 'No appointment found to cancel'}), 400
 
-        # Update the clinic schedule status back to 'available'
-        db['Clinic_Schedule'].update_one(
-            {'schedule_id': schedule_id},
-            {'$set': {'status': 'available'}}
-        )
+            # Update the clinic schedule status back to 'available'
+            db['Clinic_Schedule'].update_one(
+                {'schedule_id': schedule_id},
+                {'$set': {'status': 'available'}},
+                session=txn_session
+            )
 
         return jsonify({'success': 'Appointment canceled successfully'})
+
     except Exception as e:
+        txn_session.abort_transaction()
         return jsonify({'error': str(e)}), 500
+
+    finally:
+        txn_session.end_session()
 
 
 @app.route('/get_today_appointments', methods=['GET'])
