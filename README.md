@@ -46,15 +46,6 @@ Linux:
 source venv/bin/activate
 ```
 
-### Database Setup
-The application uses SQLite as its database engine. Ensure you have the database file `INF2003_Proj_DB.db` in the root folder of the application directory.
-
-- **Create Database Tables:** The script `db_connection.py` includes a function to initialize the database with necessary tables. Run:
-    ```bash
-    python db_connection.py
-    ```
-    This will create tables such as `Users`, `User_History`, `Clinic_Schedule`, `Appointments`, `Medications`, `Medical_Cert`, and `user_health` in `INF2003_Proj_DB.db`.
-
 ## Running the Application
 - **Start the Flask Server:** Run the following command in your terminal:
     ```bash
@@ -150,9 +141,6 @@ app.run(debug=False)
    - Click **Logout** to securely end your session.
 
 ## Error Handling and Troubleshooting
-
-- **Database Connection Errors:**
-  Ensure `INF2003_Proj_DB.db` is present in the application directory. Confirm successful connection messages in the terminal when running `db_connection.py`.
 
 - **Debugging Mode:**
   Debug mode (`app.run(debug=True)`) provides detailed error messages and line-by-line issues in the console, helping identify specific errors during development.
