@@ -3,6 +3,15 @@
 ## Application Overview
 This application is a web-based health management system with two primary user roles: **User (patients)** and **Doctor**. The system allows users to register, log in, track their health data, book appointments, and manage account settings. Doctors can manage patient health records, view and manage schedules, and update appointment statuses.
 
+##Accounts
+User Account
+Username: kerwin
+Password: 123456
+
+Doctor Account
+Username: doctor
+Password: 123456
+
 ## Environment Setup
 
 ### Prerequisites
