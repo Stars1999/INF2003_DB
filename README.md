@@ -5,12 +5,16 @@ This application is a web-based health management system with two primary user r
 
 ## Accounts
 - User Account
-Username: kerwin
-Password: 123456
+  ```bash
+    Username: kerwin
+    Password: 123456
+  ```
 
 - Doctor Account
-Username: doctor
-Password: 123456
+  ```bash
+    Username: doctor
+    Password: 123456
+  ```
 
 ## Environment Setup
 
