@@ -45,7 +45,7 @@ The application uses SQLite as its database engine. Ensure you have the database
 ## Running the Application
 - **Start the Flask Server:** Run the following command in your terminal:
     ```bash
-    python app.py
+    python app_nosql.py
     ```
 
 - **Access the Application:** Open a web browser and navigate to:
